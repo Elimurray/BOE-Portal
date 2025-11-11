@@ -44,7 +44,7 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
 
     let paperId;
     if (paperResult.rows.length === 0) {
-      // Create new paper (basic entry, can be updated later)
+      // Create new paper
       const insertResult = await db.query(
         "INSERT INTO papers (code) VALUES ($1) RETURNING paper_id",
         [paperCode]
@@ -54,7 +54,7 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
       paperId = paperResult.rows[0].paper_id;
     }
 
-    // Delete existing grades for this paper (in case of re-upload)
+    // Delete existing grades for this paper
     await db.query("DELETE FROM grades WHERE paper_id = $1", [paperId]);
 
     // Insert grades
