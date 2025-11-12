@@ -20,5 +20,8 @@ export const submitForm = (formData) => api.post("/forms", formData);
 export const getForms = () => api.get("/forms");
 
 export const scrapeOutline = (data) => api.post("/scraper/outline", data);
+export const saveOutline = (paperId, scrapedData) => {
+  return api.post(`/papers/${paperId}/outline`, { scrapedData });
+};
 
 export default api;

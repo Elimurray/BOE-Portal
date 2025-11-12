@@ -113,9 +113,13 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
     res.json({
       success: true,
       paperId,
-      paperCode,
+      paperCode: fullPaperCode,
+      code: paperCode,
+      year,
+      semester,
+      location,
       studentCount: successCount,
-      message: `Uploaded ${successCount} student grades for ${paperCode}`,
+      message: `Uploaded ${successCount} student grades for ${fullPaperCode}`,
     });
   } catch (error) {
     console.error("Upload error:", error);

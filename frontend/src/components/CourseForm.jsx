@@ -52,56 +52,21 @@ export default function CourseForm() {
     try {
       const response = await getPaper(paperId);
       const paper = response.data;
+      console.log(paper);
       setSelectedPaper(paper);
 
       // Prepopulate form with paper data
       setFormData((prev) => ({
         ...prev,
-        lecturers: paper.outline?.convenor || "",
-        tutors: paper.outline?.tutors?.join(", ") || "",
+        lecturers:
+          paper.outline?.lecturers?.map((c) => c.name).join(", ") || "",
+        tutors: paper.outline?.tutors?.map((t) => t.name).join(", ") || "",
         deliveryMode: paper.outline?.deliveryMode || "",
       }));
-
-      // Try to scrape outline if not already cached
-      if (
-        !paper.outline &&
-        paper.code &&
-        paper.year &&
-        paper.semester &&
-        paper.location
-      ) {
-        handleScrapeOutline(paper);
-      }
     } catch (error) {
-      console.error("Error fetching paper:", error);
+      console.log("Error fetching paper:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleScrapeOutline = async (paper) => {
-    setScraping(true);
-    try {
-      const response = await scrapeOutline({
-        paperCode: paper.code,
-        year: paper.year,
-        semester: paper.semester,
-        location: paper.location,
-      });
-
-      if (response.data.success) {
-        const data = response.data.data;
-        setFormData((prev) => ({
-          ...prev,
-          lecturers: data.convenor || prev.lecturers,
-          tutors: data.tutors?.join(", ") || prev.tutors,
-          deliveryMode: data.deliveryMode || prev.deliveryMode,
-        }));
-      }
-    } catch (error) {
-      console.error("Error scraping outline:", error);
-    } finally {
-      setScraping(false);
     }
   };
 

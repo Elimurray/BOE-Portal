@@ -75,4 +75,45 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Save scraped outline data
+router.post("/:id/outline", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { scrapedData } = req.body;
+
+    // Check if paper exists
+    const paperCheck = await db.query(
+      "SELECT paper_id FROM papers WHERE paper_id = $1",
+      [id]
+    );
+
+    if (paperCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Paper not found" });
+    }
+
+    // Check if outline already exists
+    const existingOutline = await db.query(
+      "SELECT outline_id FROM paper_outlines WHERE paper_id = $1",
+      [id]
+    );
+
+    if (existingOutline.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: "Outline already exists, skipping",
+      });
+    }
+
+    // Insert new outline only if none exists
+    await db.query(
+      "INSERT INTO paper_outlines (paper_id, scraped_data, scraped_at) VALUES ($1, $2, NOW())",
+      [id, scrapedData]
+    );
+
+    res.json({ success: true, message: "Outline saved successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
