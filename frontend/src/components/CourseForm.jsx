@@ -59,9 +59,12 @@ export default function CourseForm() {
       setFormData((prev) => ({
         ...prev,
         lecturers:
-          paper.outline?.lecturers?.map((c) => c.name).join(", ") || "",
+          paper.outline?.lecturers?.map((c) => c.name).join(", ") ||
+          paper.outline?.convenors?.map((c) => c.name).join(", ") ||
+          "",
         tutors: paper.outline?.tutors?.map((t) => t.name).join(", ") || "",
         deliveryMode: paper.outline?.deliveryMode || "",
+        internalExternalSplit: paper.outline?.assessmentRatio || "",
       }));
     } catch (error) {
       console.log("Error fetching paper:", error);
@@ -217,22 +220,19 @@ export default function CourseForm() {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Student Count</label>
-                    <input
-                      type="number"
-                      value={selectedPaper.studentCount}
-                      readOnly
-                      className="readonly"
-                    />
+                    <input type="number" value={selectedPaper.studentCount} />
                   </div>
                   <div className="form-group">
                     <label>Pass Rate (%)</label>
-                    <input
-                      type="number"
-                      value={selectedPaper.passRate}
-                      readOnly
-                      className="readonly"
-                    />
+                    <input type="number" value={selectedPaper.passRate} />
                   </div>
+                </div>
+                <div className="form-group">
+                  <label>Pass / Fail</label>
+                  <input
+                    type="text"
+                    value={`${selectedPaper.passCount} / ${selectedPaper.failCount}`}
+                  />
                 </div>
                 <div className="form-group">
                   <label>Number of Restricted Passes (RP) *</label>

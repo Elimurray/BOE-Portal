@@ -49,14 +49,15 @@ router.get("/:id", async (req, res) => {
     // Get grade statistics
     const statsResult = await db.query(
       `
-      SELECT 
-        COUNT(*) as student_count,
-        ROUND(AVG(paper_total), 2) as avg_grade,
-        COUNT(CASE WHEN paper_total >= 50 THEN 1 END) as pass_count,
-        ROUND(COUNT(CASE WHEN paper_total >= 50 THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2) as pass_rate
-      FROM grades 
-      WHERE paper_id = $1
-    `,
+  SELECT 
+    COUNT(*) as student_count,
+    ROUND(AVG(paper_total), 2) as avg_grade,
+    COUNT(CASE WHEN paper_total >= 50 THEN 1 END) as pass_count,
+    COUNT(CASE WHEN paper_total < 50 THEN 1 END) as fail_count,
+    ROUND(COUNT(CASE WHEN paper_total >= 50 THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2) as pass_rate
+  FROM grades 
+  WHERE paper_id = $1
+`,
       [id]
     );
 
@@ -68,6 +69,7 @@ router.get("/:id", async (req, res) => {
       studentCount: parseInt(stats.student_count) || 0,
       avgGrade: parseFloat(stats.avg_grade) || 0,
       passCount: parseInt(stats.pass_count) || 0,
+      failCount: parseInt(stats.fail_count) || 0,
       passRate: parseFloat(stats.pass_rate) || 0,
     });
   } catch (error) {
