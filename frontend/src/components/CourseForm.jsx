@@ -220,11 +220,21 @@ export default function CourseForm() {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Student Count</label>
-                    <input type="number" value={selectedPaper.studentCount} />
+                    <input
+                      type="number"
+                      value={selectedPaper.studentCount}
+                      readOnly
+                      className="readonly"
+                    />
                   </div>
                   <div className="form-group">
                     <label>Pass Rate (%)</label>
-                    <input type="number" value={selectedPaper.passRate} />
+                    <input
+                      type="number"
+                      value={selectedPaper.passRate}
+                      readOnly
+                      className="readonly"
+                    />
                   </div>
                 </div>
                 <div className="form-group">
@@ -232,6 +242,8 @@ export default function CourseForm() {
                   <input
                     type="text"
                     value={`${selectedPaper.passCount} / ${selectedPaper.failCount}`}
+                    readOnly
+                    className="readonly"
                   />
                 </div>
                 <div className="form-group">
