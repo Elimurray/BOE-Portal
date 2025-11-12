@@ -84,9 +84,9 @@ export default function CourseForm() {
     try {
       const response = await scrapeOutline({
         paperCode: paper.code,
-        year: paper.year.toString().slice(-2), // Convert 2025 to 25
+        year: paper.year,
         semester: paper.semester,
-        location: paper.location === "Hamilton" ? "HAM" : "TGA",
+        location: paper.location,
       });
 
       if (response.data.success) {

@@ -7,6 +7,23 @@ import db from "../db/connection.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
+// PaperCode parser
+function parsePaperCode(fullCode) {
+  const regex = /^([A-Z]+\d+)-(\d{2})([A-Z])\s*\(([A-Z]+)\)$/;
+  const match = fullCode.match(regex);
+
+  if (!match) {
+    throw new Error(`Invalid paper code format: ${fullCode}`);
+  }
+
+  return {
+    code: match[1],
+    year: match[2],
+    semester: match[3],
+    location: match[4],
+  };
+}
+
 router.post("/upload", upload.single("csv"), async (req, res) => {
   try {
     if (!req.file) {
@@ -34,20 +51,38 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
       });
     }
 
-    const paperCode = firstRow["Paper code"];
+    const fullPaperCode = firstRow["Paper code"];
+
+    // Call parse set variables
+    let paperCode, year, semester, location;
+    try {
+      const parsed = parsePaperCode(fullPaperCode);
+      paperCode = parsed.code;
+      year = parsed.year;
+      semester = parsed.semester;
+      location = parsed.location;
+    } catch (parseError) {
+      // Clean up uploaded file before returning error
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        error: "Invalid paper code format",
+        details: parseError.message,
+        expected: "Format should be: COMPX374-24H (HAM)",
+      });
+    }
 
     // Find or create paper
     let paperResult = await db.query(
-      "SELECT paper_id FROM papers WHERE code = $1 ORDER BY year DESC, semester DESC LIMIT 1",
-      [paperCode]
+      "SELECT paper_id FROM papers WHERE code = $1 AND year = $2 AND semester = $3 AND location = $4",
+      [paperCode, year, semester, location]
     );
 
     let paperId;
     if (paperResult.rows.length === 0) {
       // Create new paper
       const insertResult = await db.query(
-        "INSERT INTO papers (code) VALUES ($1) RETURNING paper_id",
-        [paperCode]
+        "INSERT INTO papers (code, year, semester, location) VALUES ($1, $2, $3, $4) RETURNING paper_id",
+        [paperCode, year, semester, location]
       );
       paperId = insertResult.rows[0].paper_id;
     } else {
