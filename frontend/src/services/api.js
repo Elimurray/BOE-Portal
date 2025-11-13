@@ -24,4 +24,10 @@ export const saveOutline = (paperId, scrapedData) => {
   return api.post(`/papers/${paperId}/outline`, { scrapedData });
 };
 
+export const getGradeDistribution = (paperId) =>
+  api.get(`/graphs/${paperId}/distribution`);
+
+export const getHistoricalComparison = (paperId) =>
+  api.get(`/graphs/${paperId}/historical`);
+
 export default api;

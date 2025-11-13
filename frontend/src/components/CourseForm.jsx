@@ -1,11 +1,22 @@
 import { useState, useEffect } from "react";
 import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
+import {
   getPapers,
   getPaper,
   submitForm,
   scrapeOutline,
 } from "../services/api";
 import "./CourseForm.css";
+import GradeDistributionChart from "./GradeDistributionChart";
+import HistoricalComparisonChart from "./HistoricalComparisonChart";
 
 export default function CourseForm() {
   const [papers, setPapers] = useState([]);
@@ -372,18 +383,14 @@ export default function CourseForm() {
           {/* RIGHT: Graphs */}
           <div className="graph-panel">
             <h3>Grade Distribution</h3>
-            <div className="graph-placeholder">
-              <p>Grade distribution graph will appear here</p>
-              <p className="graph-note">
-                Showing data for {selectedPaper.studentCount} students
-              </p>
-            </div>
+            <p className="graph-description">
+              Current semester for {selectedPaper.code}
+            </p>
+            <GradeDistributionChart paperId={selectedPaper.paper_id} />
 
             <h3>Historical Comparison</h3>
-            <div className="graph-placeholder">
-              <p>Historical comparison graph will appear here</p>
-              <p className="graph-note">Comparing with previous years</p>
-            </div>
+            <p className="graph-description">Comparing with previous years</p>
+            <HistoricalComparisonChart paperId={selectedPaper.paper_id} />
           </div>
         </div>
       )}

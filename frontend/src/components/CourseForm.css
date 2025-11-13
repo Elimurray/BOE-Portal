@@ -4,7 +4,7 @@
 }
 
 .course-form-page > h2 {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #333;
   text-align: center;
@@ -15,7 +15,7 @@
 /* Paper Selector */
 .paper-selector {
   background: white;
-  padding: 1.5rem;
+  padding: 0.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
@@ -30,7 +30,7 @@
 
 .paper-selector select {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.25rem;
   font-size: 1rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -174,9 +174,10 @@
 
 /* Graph Panel */
 .graph-panel {
-  background: #f9fafb;
+  background: white;
   padding: 2rem;
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   max-height: calc(100vh - 200px);
 }

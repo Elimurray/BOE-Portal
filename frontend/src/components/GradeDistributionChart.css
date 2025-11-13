@@ -1,0 +1,22 @@
+.chart-container {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.chart-loading,
+.chart-error,
+.chart-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+  background: white;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+}
+
+.chart-error {
+  color: #ef4444;
+  border-color: #fca5a5;
+}
