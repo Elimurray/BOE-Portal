@@ -12,20 +12,20 @@ import { useEffect, useState } from "react";
 import { getHistoricalComparison } from "../services/api";
 import "./HistoricalComparisonChart.css";
 
-export default function HistoricalComparisonChart({ paperId }) {
+export default function HistoricalComparisonChart({ paperCode }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!paperId) return;
+    if (!paperCode) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await getHistoricalComparison(paperId);
+        const response = await getHistoricalComparison(paperCode);
 
         if (!response.data.labels || response.data.labels.length === 0) {
           setData([]);
@@ -50,7 +50,7 @@ export default function HistoricalComparisonChart({ paperId }) {
     };
 
     fetchData();
-  }, [paperId]);
+  }, [paperCode]);
 
   if (loading) {
     return <div className="chart-loading">Loading historical data...</div>;

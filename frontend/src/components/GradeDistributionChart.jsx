@@ -12,20 +12,20 @@ import { useEffect, useState } from "react";
 import { getGradeDistribution } from "../services/api";
 import "./GradeDistributionChart.css";
 
-export default function GradeDistributionChart({ paperId }) {
+export default function GradeDistributionChart({ occurrenceId }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!paperId) return;
+    if (!occurrenceId) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await getGradeDistribution(paperId);
+        const response = await getGradeDistribution(occurrenceId);
 
         // Transform data for Recharts
         const chartData = response.data.labels.map((label, index) => ({
@@ -42,7 +42,7 @@ export default function GradeDistributionChart({ paperId }) {
     };
 
     fetchData();
-  }, [paperId]);
+  }, [occurrenceId]);
 
   if (loading) {
     return <div className="chart-loading">Loading distribution...</div>;

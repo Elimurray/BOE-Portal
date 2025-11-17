@@ -8,13 +8,16 @@ router.get("/", async (req, res) => {
   try {
     const result = await db.query(`
       SELECT 
-        p.*,
-        COUNT(g.grade_id) as student_count,
-        ROUND(AVG(g.paper_total), 2) as avg_grade
+        p.paper_id,
+        p.paper_code,
+        p.paper_name,
+        COUNT(DISTINCT o.occurrence_id) as occurrence_count,
+        MAX(o.year) as latest_year,
+        MAX(o.trimester) as latest_trimester
       FROM papers p
-      LEFT JOIN grades g ON p.paper_id = g.paper_id
+      LEFT JOIN occurrences o ON p.paper_id = o.paper_id
       GROUP BY p.paper_id
-      ORDER BY p.year DESC, p.semester DESC, p.code
+      ORDER BY p.paper_code
     `);
 
     res.json(result.rows);
@@ -23,54 +26,84 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get single paper with details
-router.get("/:id", async (req, res) => {
+// Get all occurrences with grade data
+router.get("/occurrences", async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT 
+        o.occurrence_id,
+        o.paper_id,
+        p.paper_code,
+        p.paper_name,
+        o.year,
+        o.trimester,
+        o.location,
+        o.points,
+        o.delivery_mode,
+        gd.total_students,
+        gd.pass_rate,
+        cf.status as form_status
+      FROM occurrences o
+      JOIN papers p ON o.paper_id = p.paper_id
+      LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
+      LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
+      ORDER BY o.year DESC, o.trimester DESC, p.paper_code
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single occurrence with details
+router.get("/occurrences/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get paper info
-    const paperResult = await db.query(
-      "SELECT * FROM papers WHERE paper_id = $1",
+    // Get occurrence info with paper details
+    const occurrenceResult = await db.query(
+      `SELECT 
+        o.*,
+        p.paper_code,
+        p.paper_name
+      FROM occurrences o
+      JOIN papers p ON o.paper_id = p.paper_id
+      WHERE o.occurrence_id = $1`,
       [id]
     );
 
-    if (paperResult.rows.length === 0) {
-      return res.status(404).json({ error: "Paper not found" });
+    if (occurrenceResult.rows.length === 0) {
+      return res.status(404).json({ error: "Occurrence not found" });
     }
 
-    const paper = paperResult.rows[0];
+    const occurrence = occurrenceResult.rows[0];
 
     // Get outline data if exists
     const outlineResult = await db.query(
-      "SELECT scraped_data FROM paper_outlines WHERE paper_id = $1",
+      "SELECT scraped_data FROM paper_outlines WHERE occurrence_id = $1",
       [id]
     );
 
-    // Get grade statistics
-    const statsResult = await db.query(
-      `
-  SELECT 
-    COUNT(*) as student_count,
-    ROUND(AVG(paper_total), 2) as avg_grade,
-    COUNT(CASE WHEN paper_total >= 50 THEN 1 END) as pass_count,
-    COUNT(CASE WHEN paper_total < 50 THEN 1 END) as fail_count,
-    ROUND(COUNT(CASE WHEN paper_total >= 50 THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2) as pass_rate
-  FROM grades 
-  WHERE paper_id = $1
-`,
+    // Get grade distribution
+    const gradeResult = await db.query(
+      `SELECT 
+        grade_a_plus, grade_a, grade_a_minus,
+        grade_b_plus, grade_b, grade_b_minus,
+        grade_c_plus, grade_c, grade_c_minus,
+        grade_d, grade_e, grade_rp, grade_other,
+        total_students, pass_count, pass_rate
+      FROM grade_distributions 
+      WHERE occurrence_id = $1`,
       [id]
     );
 
-    const stats = statsResult.rows[0];
+    const gradeDistribution = gradeResult.rows[0] || null;
 
     res.json({
-      ...paper,
+      ...occurrence,
       outline: outlineResult.rows[0]?.scraped_data || null,
-      studentCount: parseInt(stats.student_count) || 0,
-      avgGrade: parseFloat(stats.avg_grade) || 0,
-      passCount: parseInt(stats.pass_count) || 0,
-      failCount: parseInt(stats.fail_count) || 0,
-      passRate: parseFloat(stats.pass_rate) || 0,
+      gradeDistribution,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -78,24 +111,25 @@ router.get("/:id", async (req, res) => {
 });
 
 // Save scraped outline data
-router.post("/:id/outline", async (req, res) => {
+router.post("/occurrences/:id/outline", async (req, res) => {
   try {
     const { id } = req.params;
     const { scrapedData } = req.body;
 
     // Check if paper exists
-    const paperCheck = await db.query(
-      "SELECT paper_id FROM papers WHERE paper_id = $1",
+    // Check if occurrence exists
+    const occurrenceCheck = await db.query(
+      "SELECT occurrence_id FROM occurrences WHERE occurrence_id = $1",
       [id]
     );
 
-    if (paperCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Paper not found" });
+    if (occurrenceCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Occurrence not found" });
     }
 
     // Check if outline already exists
     const existingOutline = await db.query(
-      "SELECT outline_id FROM paper_outlines WHERE paper_id = $1",
+      "SELECT outline_id FROM paper_outlines WHERE occurrence_id = $1",
       [id]
     );
 
@@ -108,7 +142,7 @@ router.post("/:id/outline", async (req, res) => {
 
     // Insert new outline only if none exists
     await db.query(
-      "INSERT INTO paper_outlines (paper_id, scraped_data, scraped_at) VALUES ($1, $2, NOW())",
+      "INSERT INTO paper_outlines (occurrence_id, scraped_data, scraped_at) VALUES ($1, $2, NOW())",
       [id, scrapedData]
     );
 

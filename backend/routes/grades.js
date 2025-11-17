@@ -71,55 +71,131 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
       });
     }
 
-    // Find or create paper
-    let paperResult = await db.query(
-      "SELECT paper_id FROM papers WHERE code = $1 AND year = $2 AND semester = $3 AND location = $4",
-      [paperCode, year, semester, location]
+    // First, find or create the paper definition
+    let paperDefResult = await db.query(
+      "SELECT paper_id FROM papers WHERE paper_code = $1",
+      [paperCode]
     );
 
-    let paperId;
-    if (paperResult.rows.length === 0) {
-      // Create new paper
-      const insertResult = await db.query(
-        "INSERT INTO papers (code, year, semester, location) VALUES ($1, $2, $3, $4) RETURNING paper_id",
-        [paperCode, year, semester, location]
+    let paperDefId;
+    if (paperDefResult.rows.length === 0) {
+      // Create new paper definition (Fetch Title from outline here)
+      const insertPaperDef = await db.query(
+        "INSERT INTO papers (paper_code, paper_name) VALUES ($1, $2) RETURNING paper_id",
+        [paperCode, `${paperCode} - Title`]
       );
-      paperId = insertResult.rows[0].paper_id;
+      paperDefId = insertPaperDef.rows[0].paper_id;
     } else {
-      paperId = paperResult.rows[0].paper_id;
+      paperDefId = paperDefResult.rows[0].paper_id;
     }
 
-    // Delete existing grades for this paper
-    await db.query("DELETE FROM grades WHERE paper_id = $1", [paperId]);
+    // Now find or create the occurrence
+    let occurrenceResult = await db.query(
+      "SELECT occurrence_id FROM occurrences WHERE paper_id = $1 AND year = $2 AND trimester = $3 AND location = $4",
+      [paperDefId, `20${year}`, semester, location]
+    );
 
-    // Insert grades
-    let successCount = 0;
+    let occurrenceId;
+    if (occurrenceResult.rows.length === 0) {
+      // Create new occurrence
+      const insertOccurrence = await db.query(
+        "INSERT INTO occurrences (paper_id, year, trimester, location) VALUES ($1, $2, $3, $4) RETURNING occurrence_id",
+        [paperDefId, `20${year}`, semester, location]
+      );
+      occurrenceId = insertOccurrence.rows[0].occurrence_id;
+    } else {
+      occurrenceId = occurrenceResult.rows[0].occurrence_id;
+    }
+
+    // Delete existing grade distribution for this occurrence
+    await db.query("DELETE FROM grade_distributions WHERE occurrence_id = $1", [
+      occurrenceId,
+    ]);
+
+    // Count grades by letter grade
+    const gradeCounts = {
+      a_plus: 0,
+      a: 0,
+      a_minus: 0,
+      b_plus: 0,
+      b: 0,
+      b_minus: 0,
+      c_plus: 0,
+      c: 0,
+      c_minus: 0,
+      d: 0,
+      e: 0,
+      rp: 0,
+      other: 0,
+    };
+
     for (const row of parsed.data) {
       const paperTotal = parseFloat(row["Paper total (Real)"]);
-      const studentId = row["ID number"];
 
-      if (paperTotal !== null && !isNaN(paperTotal) && studentId) {
-        await db.query(
-          "INSERT INTO grades (paper_id, student_id, paper_total) VALUES ($1, $2, $3)",
-          [paperId, studentId, paperTotal]
-        );
-        successCount++;
+      if (paperTotal !== null && !isNaN(paperTotal)) {
+        // Determine grade based on percentage
+        if (paperTotal >= 90) gradeCounts.a_plus++;
+        else if (paperTotal >= 85) gradeCounts.a++;
+        else if (paperTotal >= 80) gradeCounts.a_minus++;
+        else if (paperTotal >= 75) gradeCounts.b_plus++;
+        else if (paperTotal >= 70) gradeCounts.b++;
+        else if (paperTotal >= 65) gradeCounts.b_minus++;
+        else if (paperTotal >= 60) gradeCounts.c_plus++;
+        else if (paperTotal >= 55) gradeCounts.c++;
+        else if (paperTotal >= 50) gradeCounts.c_minus++;
+        else if (paperTotal >= 40) gradeCounts.d++;
+        else gradeCounts.e++;
       }
     }
+
+    const totalStudents = Object.values(gradeCounts).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+
+    // Insert aggregated grade distribution
+    await db.query(
+      `INSERT INTO grade_distributions 
+   (occurrence_id, grade_a_plus, grade_a, grade_a_minus, 
+    grade_b_plus, grade_b, grade_b_minus, 
+    grade_c_plus, grade_c, grade_c_minus, 
+    grade_d, grade_e, grade_rp, grade_other, 
+    uploaded_from_csv, upload_filename) 
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+      [
+        occurrenceId,
+        gradeCounts.a_plus,
+        gradeCounts.a,
+        gradeCounts.a_minus,
+        gradeCounts.b_plus,
+        gradeCounts.b,
+        gradeCounts.b_minus,
+        gradeCounts.c_plus,
+        gradeCounts.c,
+        gradeCounts.c_minus,
+        gradeCounts.d,
+        gradeCounts.e,
+        gradeCounts.rp,
+        gradeCounts.other,
+        true,
+        req.file.originalname,
+      ]
+    );
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
 
     res.json({
       success: true,
-      paperId,
+      occurrenceId,
       paperCode: fullPaperCode,
       code: paperCode,
-      year,
-      semester,
+      year: `20${year}`,
+      trimester: semester,
       location,
-      studentCount: successCount,
-      message: `Uploaded ${successCount} student grades for ${fullPaperCode}`,
+      studentCount: totalStudents,
+      gradeDistribution: gradeCounts,
+      message: `Uploaded grade distribution for ${fullPaperCode} (${totalStudents} students)`,
     });
   } catch (error) {
     console.error("Upload error:", error);

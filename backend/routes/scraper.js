@@ -7,10 +7,11 @@ const router = express.Router();
 
 router.post("/outline", async (req, res) => {
   try {
-    const { paperCode, year, semester, location } = req.body;
+    const { paperCode, year, trimester, location } = req.body;
 
-    // Build occurrence code
-    const occurrenceCode = `${paperCode}-${year}${semester} (${location})`;
+    // Build occurrence code - convert full year (2025) to short year (25)
+    const shortYear = year.toString().slice(-2); // Gets last 2 digits
+    const occurrenceCode = `${paperCode}-${shortYear}${trimester} (${location})`;
     // URL encode the occurrence code
     const encodedCode = encodeURIComponent(occurrenceCode);
 

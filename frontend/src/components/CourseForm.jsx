@@ -13,13 +13,15 @@ import {
   getPaper,
   submitForm,
   scrapeOutline,
+  getOccurrences,
+  getOccurrence,
 } from "../services/api";
 import "./CourseForm.css";
 import GradeDistributionChart from "./GradeDistributionChart";
 import HistoricalComparisonChart from "./HistoricalComparisonChart";
 
 export default function CourseForm() {
-  const [papers, setPapers] = useState([]);
+  const [occurrences, setOccurrences] = useState([]);
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [loading, setLoading] = useState(false);
   const [scraping, setScraping] = useState(false);
@@ -45,37 +47,37 @@ export default function CourseForm() {
 
   const fetchPapers = async () => {
     try {
-      const response = await getPapers();
-      setPapers(response.data);
+      const response = await getOccurrences();
+      setOccurrences(response.data);
     } catch (error) {
       console.error("Error fetching papers:", error);
     }
   };
 
-  const handlePaperSelect = async (e) => {
-    const paperId = e.target.value;
-    if (!paperId) {
+  const handleOccurrenceSelect = async (e) => {
+    const occurrenceId = e.target.value;
+    if (!occurrenceId) {
       setSelectedPaper(null);
       return;
     }
 
     setLoading(true);
     try {
-      const response = await getPaper(paperId);
-      const paper = response.data;
-      console.log(paper);
-      setSelectedPaper(paper);
+      const response = await getOccurrence(occurrenceId);
+      const occurrence = response.data;
+      console.log(occurrence);
+      setSelectedPaper(occurrence);
 
       // Prepopulate form with paper data
       setFormData((prev) => ({
         ...prev,
         lecturers:
-          paper.outline?.lecturers?.map((c) => c.name).join(", ") ||
-          paper.outline?.convenors?.map((c) => c.name).join(", ") ||
+          occurrence.outline?.lecturers?.map((c) => c.name).join(", ") ||
+          occurrence.outline?.convenors?.map((c) => c.name).join(", ") ||
           "",
-        tutors: paper.outline?.tutors?.map((t) => t.name).join(", ") || "",
-        deliveryMode: paper.outline?.deliveryMode || "",
-        internalExternalSplit: paper.outline?.assessmentRatio || "",
+        tutors: occurrence.outline?.tutors?.map((t) => t.name).join(", ") || "",
+        deliveryMode: occurrence.outline?.deliveryMode || "",
+        internalExternalSplit: occurrence.outline?.assessmentRatio || "",
       }));
     } catch (error) {
       console.log("Error fetching paper:", error);
@@ -102,7 +104,7 @@ export default function CourseForm() {
 
     try {
       const response = await submitForm({
-        paperId: selectedPaper.paper_id,
+        occurrenceId: selectedPaper.occurrence_id,
         ...formData,
       });
 
@@ -138,19 +140,22 @@ export default function CourseForm() {
     <div className="course-form-page">
       <h2>Course Form Submission</h2>
 
-      {/* Paper Selector */}
+      {/* Occurrence Selector */}
       <div className="paper-selector">
-        <label htmlFor="paper-select">Select Paper:</label>
+        <label htmlFor="occurrence-select">Select Paper Occurrence:</label>
         <select
-          id="paper-select"
-          onChange={handlePaperSelect}
+          id="occurrence-select"
+          onChange={handleOccurrenceSelect}
           disabled={loading}
         >
-          <option value="">-- Select a paper --</option>
-          {papers.map((paper) => (
-            <option key={paper.paper_id} value={paper.paper_id}>
-              {paper.code} - {paper.title || "Untitled"} ({paper.year}{" "}
-              {paper.semester})
+          <option value="">-- Select a paper occurrence --</option>
+          {occurrences.map((occurrence) => (
+            <option
+              key={occurrence.occurrence_id}
+              value={occurrence.occurrence_id}
+            >
+              {occurrence.paper_code} - {occurrence.year} {occurrence.trimester}
+              - {occurrence.location}- {occurrence.paper_name}
             </option>
           ))}
         </select>
@@ -165,12 +170,12 @@ export default function CourseForm() {
           <div className="form-panel">
             <div className="paper-header">
               <h3>
-                {selectedPaper.code} - {selectedPaper.year}{" "}
-                {selectedPaper.semester}
+                {selectedPaper.paper_code} - {selectedPaper.year}{" "}
+                {selectedPaper.trimester} ({selectedPaper.location})
               </h3>
               <p className="paper-stats">
-                {selectedPaper.studentCount} students | {selectedPaper.passRate}
-                % pass rate
+                {selectedPaper.gradeDistribution?.total_students || 0} students
+                | {selectedPaper.gradeDistribution?.pass_rate || 0}% pass rate
               </p>
             </div>
 
@@ -233,7 +238,9 @@ export default function CourseForm() {
                     <label>Student Count</label>
                     <input
                       type="number"
-                      value={selectedPaper.studentCount}
+                      value={
+                        selectedPaper.gradeDistribution?.total_students || 0
+                      }
                       readOnly
                       className="readonly"
                     />
@@ -242,11 +249,25 @@ export default function CourseForm() {
                     <label>Pass Rate (%)</label>
                     <input
                       type="number"
-                      value={selectedPaper.passRate}
+                      value={selectedPaper.gradeDistribution?.pass_rate || 0}
                       readOnly
                       className="readonly"
                     />
                   </div>
+                </div>
+                <div className="form-group">
+                  <label>Pass / Fail</label>
+                  <input
+                    type="text"
+                    value={`${
+                      selectedPaper.gradeDistribution?.pass_count || 0
+                    } / ${
+                      (selectedPaper.gradeDistribution?.total_students || 0) -
+                      (selectedPaper.gradeDistribution?.pass_count || 0)
+                    }`}
+                    readOnly
+                    className="readonly"
+                  />
                 </div>
                 <div className="form-group">
                   <label>Pass / Fail</label>
@@ -384,13 +405,15 @@ export default function CourseForm() {
           <div className="graph-panel">
             <h3>Grade Distribution</h3>
             <p className="graph-description">
-              Current semester for {selectedPaper.code}
+              Current semester for {selectedPaper.paper_code}
             </p>
-            <GradeDistributionChart paperId={selectedPaper.paper_id} />
+            <GradeDistributionChart
+              occurrenceId={selectedPaper.occurrence_id}
+            />
 
             <h3>Historical Comparison</h3>
             <p className="graph-description">Comparing with previous years</p>
-            <HistoricalComparisonChart paperId={selectedPaper.paper_id} />
+            <HistoricalComparisonChart paperCode={selectedPaper.paper_code} />
           </div>
         </div>
       )}

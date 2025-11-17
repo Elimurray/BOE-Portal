@@ -15,19 +15,23 @@ export const uploadCSV = (file) => {
 
 export const getPapers = () => api.get("/papers");
 export const getPaper = (id) => api.get(`/papers/${id}`);
+export const getOccurrences = () => api.get("/papers/occurrences");
+export const getOccurrence = (id) => api.get(`/papers/occurrences/${id}`);
 
 export const submitForm = (formData) => api.post("/forms", formData);
 export const getForms = () => api.get("/forms");
 
 export const scrapeOutline = (data) => api.post("/scraper/outline", data);
-export const saveOutline = (paperId, scrapedData) => {
-  return api.post(`/papers/${paperId}/outline`, { scrapedData });
+export const saveOutline = (occurrenceId, scrapedData) => {
+  return api.post(`/papers/occurrences/${occurrenceId}/outline`, {
+    scrapedData,
+  });
 };
 
-export const getGradeDistribution = (paperId) =>
-  api.get(`/graphs/${paperId}/distribution`);
+export const getGradeDistribution = (occurrenceId) =>
+  api.get(`/graphs/${occurrenceId}/distribution`);
 
-export const getHistoricalComparison = (paperId) =>
-  api.get(`/graphs/${paperId}/historical`);
+export const getHistoricalComparison = (paperCode) =>
+  api.get(`/graphs/historical/${paperCode}`);
 
 export default api;

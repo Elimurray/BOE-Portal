@@ -23,7 +23,7 @@ export default function CSVUpload() {
       const response = await scrapeOutline({
         paperCode: paper.code,
         year: paper.year,
-        semester: paper.semester,
+        trimester: paper.trimester,
         location: paper.location,
       });
 
@@ -36,7 +36,7 @@ export default function CSVUpload() {
         console.log("Scraped data:", scrapedData);
 
         // Save the scraped data to the database
-        const saveResponse = await saveOutline(paper.paperId, scrapedData);
+        const saveResponse = await saveOutline(paper.occurrenceId, scrapedData);
 
         console.log("Save response:", saveResponse.data);
         console.log("Outline scraped and saved successfully");
@@ -69,15 +69,15 @@ export default function CSVUpload() {
       if (
         response.data.code &&
         response.data.year &&
-        response.data.semester &&
+        response.data.trimester &&
         response.data.location
       ) {
         console.log("CSV upload response data:", response.data);
         await handleScrapeAndSaveOutline({
-          paperId: response.data.paperId,
+          occurrenceId: response.data.occurrenceId,
           code: response.data.code,
           year: response.data.year,
-          semester: response.data.semester,
+          trimester: response.data.trimester,
           location: response.data.location,
         });
       }
