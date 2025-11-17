@@ -149,15 +149,19 @@ export default function CourseForm() {
           disabled={loading}
         >
           <option value="">-- Select a paper occurrence --</option>
-          {occurrences.map((occurrence) => (
-            <option
-              key={occurrence.occurrence_id}
-              value={occurrence.occurrence_id}
-            >
-              {occurrence.paper_code} - {occurrence.year} {occurrence.trimester}
-              - {occurrence.location}- {occurrence.paper_name}
-            </option>
-          ))}
+          {occurrences.map((occurrence) => {
+            const shortYear = occurrence.year.toString().slice(-2);
+            const occurrenceCode = `${occurrence.paper_code}-${shortYear}${occurrence.trimester} (${occurrence.location})`;
+
+            return (
+              <option
+                key={occurrence.occurrence_id}
+                value={occurrence.occurrence_id}
+              >
+                {occurrenceCode} - {occurrence.paper_name}
+              </option>
+            );
+          })}
         </select>
         {scraping && (
           <span className="loading-text">Scraping paper outline...</span>
@@ -269,15 +273,7 @@ export default function CourseForm() {
                     className="readonly"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Pass / Fail</label>
-                  <input
-                    type="text"
-                    value={`${selectedPaper.passCount} / ${selectedPaper.failCount}`}
-                    readOnly
-                    className="readonly"
-                  />
-                </div>
+
                 <div className="form-group">
                   <label>Number of Restricted Passes (RP) *</label>
                   <input
