@@ -89,16 +89,21 @@ export default function Review() {
 
       {/* Only render graph panel if a paper is selected */}
       {selectedPaper && (
-        <div className="graph-panel">
-          <h3>Grade Distribution</h3>
-          <p className="graph-description">
-            Current semester for {selectedPaper.paper_code}
-          </p>
-          <GradeDistributionChart occurrenceId={selectedPaper.occurrence_id} />
-
-          <h3>Historical Comparison</h3>
-          <p className="graph-description">Comparing with previous years</p>
-          <HistoricalComparisonChart paperCode={selectedPaper.paper_code} />
+        <div className="review-graph-panel">
+          <div className="graph-distribution">
+            <h3>Grade Distribution</h3>
+            <p className="graph-description">
+              Current semester for {selectedPaper.paper_code}
+            </p>
+            <GradeDistributionChart
+              occurrenceId={selectedPaper.occurrence_id}
+            />
+          </div>
+          <div className="graph-historical">
+            <h3>Historical Comparison</h3>
+            <p className="graph-description">Comparing with previous years</p>
+            <HistoricalComparisonChart paperCode={selectedPaper.paper_code} />
+          </div>
         </div>
       )}
     </div>

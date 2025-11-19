@@ -194,20 +194,15 @@ INSERT INTO occurrences (occurrence_id, paper_id, year, trimester, location) VAL
 (28, 6, 2023, 'A', 'Hamilton'),
 (29, 7, 2023, 'B', 'Hamilton'),
 (30, 17, 2023, 'B', 'Hamilton'),
--- Removed duplicates: (31, 7, 2023, 'B', 'Hamilton') - same as occurrence_id 29
--- Removed duplicates: (32, 17, 2023, 'B', 'Hamilton') - same as occurrence_id 30
 (33, 66, 2023, 'B', 'Hamilton'),
 (34, 36, 2023, 'B', 'Hamilton');
--- Removed duplicates: (35, 66, 2023, 'B', 'Hamilton') - same as occurrence_id 33
--- Removed duplicates: (36, 36, 2023, 'B', 'Hamilton') - same as occurrence_id 34
 
 SELECT setval('occurrences_occurrence_id_seq', 37);
 
 
--- ============================================================================
+
 -- PAPER OUTLINES (scraped metadata from university system)
 -- Stores data for each occurrence, not just the paper
--- ============================================================================
 CREATE TABLE paper_outlines (
     outline_id SERIAL PRIMARY KEY,
     occurrence_id INT REFERENCES occurrences(occurrence_id) ON DELETE CASCADE,
@@ -224,10 +219,8 @@ CREATE TABLE paper_outlines (
 );
 
 
--- ============================================================================
 -- OCCURRENCE_STAFF (links occurrences to staff members)
 -- Role is contextual - same person can be Lecturer for one paper, Tutor for another
--- ============================================================================
 CREATE TABLE occurrence_staff (
     occurrence_id INT NOT NULL REFERENCES occurrences(occurrence_id) ON DELETE CASCADE,
     staff_id INT NOT NULL REFERENCES Staff(staff_id) ON DELETE CASCADE,
@@ -239,23 +232,21 @@ CREATE INDEX idx_occurrence_staff_staff_id ON occurrence_staff(staff_id);
 CREATE INDEX idx_occurrence_staff_occurrence_id ON occurrence_staff(occurrence_id);
 
 -- Insert legacy occurrence_staff data
--- Note: occurrence_ids 31, 32, 35, 36 were duplicates and removed
 -- Staff for those occurrences now reference the original occurrence_ids
 INSERT INTO occurrence_staff (occurrence_id, staff_id, role) VALUES
 (27, 3, 'Lecturer'),
 (28, 3, 'Lecturer'),
 (6, 7, 'Lecturer'),
-(29, 8, 'Lecturer'),  -- Originally also on occurrence 32 (duplicate)
-(29, 9, 'Lecturer'),  -- Originally also on occurrence 32 (duplicate)
+(29, 8, 'Lecturer'),  
+(29, 9, 'Lecturer'),  
 (33, 15, 'Lecturer'),
-(34, 20, 'Lecturer'),  -- Originally on occurrence 36 (duplicate)
+(34, 20, 'Lecturer'),  
 (18, 37, 'Tutor'),
 (19, 37, 'Tutor');
 
 
--- ============================================================================
+
 -- GRADE DISTRIBUTIONS (optimized storage - one row per occurrence)
--- ============================================================================
 CREATE TABLE grade_distributions (
     distribution_id SERIAL PRIMARY KEY,
     occurrence_id INT REFERENCES occurrences(occurrence_id) ON DELETE CASCADE,
@@ -272,8 +263,8 @@ CREATE TABLE grade_distributions (
     grade_c_minus INT DEFAULT 0,
     grade_d INT DEFAULT 0,
     grade_e INT DEFAULT 0,
-    grade_rp INT DEFAULT 0,  -- Restricted Pass
-    grade_other INT DEFAULT 0, -- WD, DNS, etc.
+    grade_rp INT DEFAULT 0,  
+    grade_other INT DEFAULT 0, 
     
     -- Calculated statistics (auto-computed by PostgreSQL)
     total_students INT GENERATED ALWAYS AS (
@@ -321,9 +312,8 @@ CREATE TABLE grade_distributions (
 CREATE INDEX idx_grade_distributions_occurrence_id ON grade_distributions(occurrence_id);
 
 
--- ============================================================================
+
 -- COURSE FORMS (BOE review forms)
--- ============================================================================
 CREATE TABLE course_forms (
     form_id SERIAL PRIMARY KEY,
     occurrence_id INT REFERENCES occurrences(occurrence_id) ON DELETE CASCADE,
@@ -361,17 +351,15 @@ CREATE INDEX idx_course_forms_occurrence_id ON course_forms(occurrence_id);
 CREATE INDEX idx_course_forms_status ON course_forms(status);
 
 
--- ============================================================================
+
 -- ADDITIONAL INDEXES FOR PERFORMANCE
--- ============================================================================
 CREATE INDEX idx_papers_code ON papers(paper_code);
 CREATE INDEX idx_paper_outlines_occurrence_id ON paper_outlines(occurrence_id);
 
 
--- ============================================================================
+
 -- HELPER VIEW: Occurrence Summary
 -- Combines all data for easy querying
--- ============================================================================
 CREATE VIEW occurrence_summary AS
 SELECT 
     o.occurrence_id,
