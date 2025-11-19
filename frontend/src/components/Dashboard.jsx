@@ -23,6 +23,15 @@ export default function Dashboard() {
           </p>
           <span className="card-arrow">→</span>
         </Link>
+
+        <Link to="/Review" className="dashboard-card">
+          <h2>Review Papers</h2>
+          <p>
+            Review paper occurrences through historical data and dynamic data
+            visualization
+          </p>
+          <span className="card-arrow">→</span>
+        </Link>
       </div>
 
       <div className="dashboard-info">

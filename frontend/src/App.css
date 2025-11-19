@@ -8,6 +8,14 @@
   background-color: #f5f5f5;
 }
 
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.banner img {
+  height: 60px;
+}
 /* Navigation */
 .navbar {
   background-color: white;
