@@ -16,6 +16,8 @@ export const uploadCSV = (file) => {
 export const getPapers = () => api.get("/papers");
 export const getPaper = (id) => api.get(`/papers/${id}`);
 export const getOccurrences = () => api.get("/papers/occurrences");
+export const getOccurrencesIncomplete = () =>
+  api.get("/papers/occurrences/incomplete");
 export const getOccurrence = (id) => api.get(`/papers/occurrences/${id}`);
 
 export const submitForm = (formData) => api.post("/forms", formData);

@@ -56,6 +56,37 @@ router.get("/occurrences", async (req, res) => {
   }
 });
 
+// Get incomplete occurrences (form not complete)
+router.get("/occurrences/incomplete", async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT 
+        o.occurrence_id,
+        o.paper_id,
+        p.paper_code,
+        p.paper_name,
+        o.year,
+        o.trimester,
+        o.location,
+        o.points,
+        o.delivery_mode,
+        gd.total_students,
+        gd.pass_rate,
+        cf.status as form_status
+      FROM occurrences o
+      JOIN papers p ON o.paper_id = p.paper_id
+      LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
+      LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
+      WHERE o.form_complete = FALSE OR o.form_complete IS NULL
+      ORDER BY o.year DESC, o.trimester DESC, p.paper_code
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get single occurrence with details
 router.get("/occurrences/:id", async (req, res) => {
   try {

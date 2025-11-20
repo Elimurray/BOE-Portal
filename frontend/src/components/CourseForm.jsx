@@ -15,6 +15,7 @@ import {
   scrapeOutline,
   getOccurrences,
   getOccurrence,
+  getOccurrencesIncomplete,
 } from "../services/api";
 import "./CourseForm.css";
 import GradeDistributionChart from "./GradeDistributionChart";
@@ -48,7 +49,7 @@ export default function CourseForm() {
 
   const fetchPapers = async () => {
     try {
-      const response = await getOccurrences();
+      const response = await getOccurrencesIncomplete();
       setOccurrences(response.data);
     } catch (error) {
       console.error("Error fetching papers:", error);

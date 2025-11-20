@@ -7,7 +7,7 @@ const router = express.Router();
 router.post("/", async (req, res) => {
   try {
     const {
-      paperId,
+      occurrenceId,
       submittedByEmail,
       submittedByName,
       lecturers,
@@ -24,39 +24,39 @@ router.post("/", async (req, res) => {
     } = req.body;
 
     // Get grade stats
-    const statsResult = await db.query(
-      `
-      SELECT 
-        COUNT(*) as student_count,
-        ROUND(COUNT(CASE WHEN paper_total >= 50 THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2) as pass_rate
-      FROM grades WHERE paper_id = $1
-    `,
-      [paperId]
-    );
+    // const statsResult = await db.query(
+    //   `
+    //   SELECT
+    //     COUNT(*) as student_count,
+    //     ROUND(COUNT(CASE WHEN paper_total >= 50 THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2) as pass_rate
+    //   FROM grades WHERE paper_id = $1
+    // `,
+    //   [paperId]
+    // );
 
-    const stats = statsResult.rows[0];
+    // const stats = statsResult.rows[0];
 
     const result = await db.query(
       `
       INSERT INTO course_forms (
-        paper_id, submitted_by_email, submitted_by_name,
-        lecturers, tutors, student_count, pass_rate,
+        occurrence_id, submitted_by_email, submitted_by_name,
+        lecturers, tutors, 
         rp_count, assessment_item_count, internal_external_split,
         assessment_types_summary, delivery_mode,
         major_changes_description, grade_distribution_different,
         grade_distribution_comments, other_comments,
         status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING form_id
     `,
       [
-        paperId,
+        occurrenceId,
         submittedByEmail,
         submittedByName,
         lecturers,
         tutors,
-        stats.student_count,
-        stats.pass_rate,
+        // stats.student_count,
+        // stats.pass_rate,
         rpCount,
         assessmentItemCount,
         internalExternalSplit,
@@ -68,6 +68,16 @@ router.post("/", async (req, res) => {
         otherComments,
         "submitted",
       ]
+    );
+
+    // Mark the occurrence as having a complete form
+    await db.query(
+      `
+      UPDATE occurrences
+      SET form_complete = TRUE
+      WHERE occurrence_id = $1
+    `,
+      [occurrenceId]
     );
 
     res.json({
