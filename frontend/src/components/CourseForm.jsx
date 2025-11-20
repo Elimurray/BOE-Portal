@@ -18,7 +18,8 @@ import {
 } from "../services/api";
 import "./CourseForm.css";
 import GradeDistributionChart from "./GradeDistributionChart";
-import HistoricalComparisonChart from "./HistoricalComparisonChart";
+import HistoricalStatsTable from "./HistoricalStatsTable";
+import HistoricalDistributionChart from "./HistoricalDistributionChart";
 
 export default function CourseForm() {
   const [occurrences, setOccurrences] = useState([]);
@@ -401,15 +402,22 @@ export default function CourseForm() {
           <div className="graph-panel">
             <h3>Grade Distribution</h3>
             <p className="graph-description">
-              Current semester for {selectedPaper.paper_code}
+              {selectedPaper.year}
+              {selectedPaper.trimester} for {selectedPaper.paper_code}
             </p>
             <GradeDistributionChart
               occurrenceId={selectedPaper.occurrence_id}
             />
 
-            <h3>Historical Comparison</h3>
+            <h3>Historical Statistics</h3>
             <p className="graph-description">Comparing with previous years</p>
-            <HistoricalComparisonChart paperCode={selectedPaper.paper_code} />
+            <HistoricalStatsTable paperCode={selectedPaper.paper_code} />
+
+            <h3>Historical Distribution</h3>
+            <p className="graph-description">Comparing with previous years</p>
+            <HistoricalDistributionChart
+              occurrenceId={selectedPaper.occurrence_id}
+            />
           </div>
         </div>
       )}

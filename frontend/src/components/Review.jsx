@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import "./Review.css";
 import { getOccurrences, getOccurrenceReview } from "../services/api";
 import GradeDistributionChart from "./GradeDistributionChart";
-import HistoricalComparisonChart from "./HistoricalComparisonChart";
+import HistoricalDistributionChart from "./HistoricalDistributionChart";
+import HistoricalStatsTable from "./HistoricalStatsTable";
 
 export default function Review() {
   const [selectedOccurrence, setSelectedOccurrence] = useState(null);
@@ -270,7 +271,9 @@ export default function Review() {
             <div className="graph-card">
               <h3>Grade Distribution</h3>
               <p className="graph-description">
-                Current semester for {selectedOccurrence.paper_code}
+                {selectedOccurrence.year}
+                {selectedOccurrence.trimester} for{" "}
+                {selectedOccurrence.paper_code}
               </p>
               <GradeDistributionChart
                 occurrenceId={selectedOccurrence.occurrence_id}
@@ -278,12 +281,17 @@ export default function Review() {
             </div>
 
             <div className="graph-card">
-              <h3>Historical Comparison</h3>
+              <h3>Historical Statistics</h3>
               <p className="graph-description">Comparing with previous years</p>
-              <HistoricalComparisonChart
-                paperCode={selectedOccurrence.paper_code}
-              />
+              <HistoricalStatsTable paperCode={selectedOccurrence.paper_code} />
             </div>
+          </div>
+          <div className="graph-card">
+            <h3>Historical Distribution</h3>
+            <p className="graph-description">Comparing with previous years</p>
+            <HistoricalDistributionChart
+              occurrenceId={selectedOccurrence.occurrence_id}
+            />
           </div>
         </div>
       )}

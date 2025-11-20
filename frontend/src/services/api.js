@@ -36,4 +36,8 @@ export const getGradeDistribution = (occurrenceId) =>
 export const getHistoricalComparison = (paperCode) =>
   api.get(`/graphs/historical/${paperCode}`);
 
+export const getHistoricalDistribution = (occurrenceId) => {
+  return api.get(`/graphs/historical-distribution/${occurrenceId}`);
+};
+
 export default api;

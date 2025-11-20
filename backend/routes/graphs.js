@@ -150,4 +150,85 @@ router.get("/historical/:paperCode", async (req, res) => {
   }
 });
 
+// Get historical grade distributions for a paper code BY OCCURRENCE ID
+router.get("/historical-distribution/:occurrenceId", async (req, res) => {
+  try {
+    const { occurrenceId } = req.params;
+
+    // First, get the paper code from the occurrence
+    const occurrenceResult = await db.query(
+      `SELECT p.paper_code 
+       FROM occurrences o
+       JOIN papers p ON o.paper_id = p.paper_id
+       WHERE o.occurrence_id = $1`,
+      [occurrenceId]
+    );
+
+    if (occurrenceResult.rows.length === 0) {
+      return res.json({ data: [], message: "Occurrence not found" });
+    }
+
+    const paperCode = occurrenceResult.rows[0].paper_code;
+
+    // Now get all historical distributions for this paper code
+    const result = await db.query(
+      `
+      SELECT 
+        o.year,
+        o.trimester,
+        o.occurrence_id,
+        gd.grade_a_plus, gd.grade_a, gd.grade_a_minus,
+        gd.grade_b_plus, gd.grade_b, gd.grade_b_minus,
+        gd.grade_c_plus, gd.grade_c, gd.grade_c_minus,
+        gd.grade_d, gd.grade_e,
+        (gd.grade_a_plus + gd.grade_a + gd.grade_a_minus +
+         gd.grade_b_plus + gd.grade_b + gd.grade_b_minus +
+         gd.grade_c_plus + gd.grade_c + gd.grade_c_minus +
+         gd.grade_d + gd.grade_e) as total_students
+      FROM occurrences o
+      JOIN papers p ON o.paper_id = p.paper_id
+      LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
+      WHERE p.paper_code = $1
+        AND gd.distribution_id IS NOT NULL
+      ORDER BY o.year ASC, o.trimester ASC
+      `,
+      [paperCode]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ data: [], message: "No historical data available" });
+    }
+
+    // Convert raw counts to percentages for each year
+    const distributions = result.rows.map((row) => {
+      const total = parseInt(row.total_students);
+      return {
+        year: `${row.year} ${row.trimester}`,
+        occurrenceId: row.occurrence_id,
+        data: {
+          "A+": ((row.grade_a_plus / total) * 100).toFixed(1),
+          A: ((row.grade_a / total) * 100).toFixed(1),
+          "A-": ((row.grade_a_minus / total) * 100).toFixed(1),
+          "B+": ((row.grade_b_plus / total) * 100).toFixed(1),
+          B: ((row.grade_b / total) * 100).toFixed(1),
+          "B-": ((row.grade_b_minus / total) * 100).toFixed(1),
+          "C+": ((row.grade_c_plus / total) * 100).toFixed(1),
+          C: ((row.grade_c / total) * 100).toFixed(1),
+          "C-": ((row.grade_c_minus / total) * 100).toFixed(1),
+          D: ((row.grade_d / total) * 100).toFixed(1),
+          E: ((row.grade_e / total) * 100).toFixed(1),
+        },
+      };
+    });
+
+    res.json({
+      data: distributions,
+      paperCode: paperCode,
+    });
+  } catch (error) {
+    console.error("Error generating historical distribution:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
