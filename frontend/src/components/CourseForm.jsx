@@ -15,14 +15,14 @@ export default function CourseForm() {
   });
 
   useEffect(() => {
-    fetchPapers();
+    fetchOccurrences();
   }, []);
 
   useEffect(() => {
     applyFilters();
   }, [occurrences, filters]);
 
-  const fetchPapers = async () => {
+  const fetchOccurrences = async () => {
     try {
       const response = await getOccurrencesIncomplete();
       setOccurrences(response.data);

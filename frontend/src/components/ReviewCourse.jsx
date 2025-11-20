@@ -108,33 +108,57 @@ export default function ReviewCourse() {
             </div>
           </div>
 
-          {/* Grade Statistics Card */}
-          <div className="statistics-card">
-            <h3>Grade Statistics</h3>
-            <div className="stats-grid">
-              <div className="stat-item highlight">
-                <span className="stat-label">Total Students</span>
-                <span className="stat-value">
-                  {selectedOccurrence.total_students || "N/A"}
-                </span>
-              </div>
-              <div className="stat-item highlight">
-                <span className="stat-label">Pass Rate</span>
-                <span className="stat-value">
-                  {selectedOccurrence.pass_rate
-                    ? `${selectedOccurrence.pass_rate}%`
+          {/* Paper Outline Information */}
+          {selectedOccurrence.outline_data && (
+            <div className="outline-card">
+              <h3>Paper Outline</h3>
+              <div className="outline-info">
+                <p>
+                  <strong>Convenor(s):</strong>{" "}
+                  {selectedOccurrence.outline_data?.convenors?.length > 0
+                    ? selectedOccurrence.outline_data.convenors.map(
+                        (conv, index) => (
+                          <span key={index}>
+                            {conv.name}
+                            {conv.email && ` (${conv.email})`}
+                            {index <
+                              selectedOccurrence.outline_data.convenors.length -
+                                1 && ", "}
+                          </span>
+                        )
+                      )
                     : "N/A"}
-                </span>
-              </div>
-
-              <div className="stat-item">
-                <span className="stat-label">Restricted Passes</span>
-                <span className="stat-value">
-                  {selectedOccurrence.grade_rp || 0}
-                </span>
+                </p>
+                <p>
+                  <strong>Delivery Mode:</strong>{" "}
+                  {selectedOccurrence.outline_data.deliveryMode || "N/A"}
+                </p>
+                <p>
+                  <strong>Location:</strong>{" "}
+                  {selectedOccurrence.outline_data.whereTaught || "N/A"}
+                </p>
+                {selectedOccurrence.outline_data.tutors?.length > 0 && (
+                  <p>
+                    <strong>Tutors:</strong>{" "}
+                    {selectedOccurrence.outline_data.tutors.map(
+                      (tutor, index) => (
+                        <span key={index}>
+                          {typeof tutor === "string"
+                            ? tutor
+                            : `${tutor.name}${
+                                tutor.email ? ` (${tutor.email})` : ""
+                              }`}
+                          {index <
+                            selectedOccurrence.outline_data.tutors.length -
+                              1 && <br />}
+                        </span>
+                      )
+                    )}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Course Form Information (if submitted) */}
           {selectedOccurrence.form_status && (
@@ -197,57 +221,33 @@ export default function ReviewCourse() {
             </div>
           )}
 
-          {/* Paper Outline Information */}
-          {selectedOccurrence.outline_data && (
-            <div className="outline-card">
-              <h3>Paper Outline</h3>
-              <div className="outline-info">
-                <p>
-                  <strong>Convenor(s):</strong>{" "}
-                  {selectedOccurrence.outline_data?.convenors?.length > 0
-                    ? selectedOccurrence.outline_data.convenors.map(
-                        (conv, index) => (
-                          <span key={index}>
-                            {conv.name}
-                            {conv.email && ` (${conv.email})`}
-                            {index <
-                              selectedOccurrence.outline_data.convenors.length -
-                                1 && ", "}
-                          </span>
-                        )
-                      )
+          {/* Grade Statistics Card */}
+          <div className="statistics-card">
+            <h3>Grade Statistics</h3>
+            <div className="stats-grid">
+              <div className="stat-item highlight">
+                <span className="stat-label">Total Students</span>
+                <span className="stat-value">
+                  {selectedOccurrence.total_students || "N/A"}
+                </span>
+              </div>
+              <div className="stat-item highlight">
+                <span className="stat-label">Pass Rate</span>
+                <span className="stat-value">
+                  {selectedOccurrence.pass_rate
+                    ? `${selectedOccurrence.pass_rate}%`
                     : "N/A"}
-                </p>
-                <p>
-                  <strong>Delivery Mode:</strong>{" "}
-                  {selectedOccurrence.outline_data.deliveryMode || "N/A"}
-                </p>
-                <p>
-                  <strong>Location:</strong>{" "}
-                  {selectedOccurrence.outline_data.whereTaught || "N/A"}
-                </p>
-                {selectedOccurrence.outline_data.tutors?.length > 0 && (
-                  <p>
-                    <strong>Tutors:</strong>{" "}
-                    {selectedOccurrence.outline_data.tutors.map(
-                      (tutor, index) => (
-                        <span key={index}>
-                          {typeof tutor === "string"
-                            ? tutor
-                            : `${tutor.name}${
-                                tutor.email ? ` (${tutor.email})` : ""
-                              }`}
-                          {index <
-                            selectedOccurrence.outline_data.tutors.length -
-                              1 && <br />}
-                        </span>
-                      )
-                    )}
-                  </p>
-                )}
+                </span>
+              </div>
+
+              <div className="stat-item">
+                <span className="stat-label">Restricted Passes</span>
+                <span className="stat-value">
+                  {selectedOccurrence.grade_rp || 0}
+                </span>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Graphs Section */}
           <div className="graphs-section">
