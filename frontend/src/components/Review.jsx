@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import "./Review.css";
 import { getOccurrences, getOccurrenceReview } from "../services/api";
@@ -7,13 +8,25 @@ import HistoricalDistributionChart from "./HistoricalDistributionChart";
 import HistoricalStatsTable from "./HistoricalStatsTable";
 
 export default function Review() {
+  const navigate = useNavigate();
   const [selectedOccurrence, setSelectedOccurrence] = useState(null);
   const [loading, setLoading] = useState(false);
   const [occurrences, setOccurrences] = useState([]);
+  const [filteredOccurrences, setFilteredOccurrences] = useState([]);
+  const [filters, setFilters] = useState({
+    year: "",
+    trimester: "",
+    location: "",
+    paperCode: "",
+  });
 
   useEffect(() => {
     fetchOccurrences();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [occurrences, filters]);
 
   const fetchOccurrences = async () => {
     try {
@@ -44,257 +57,175 @@ export default function Review() {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...occurrences];
+
+    if (filters.year) {
+      filtered = filtered.filter((occ) => occ.year === parseInt(filters.year));
+    }
+    if (filters.trimester) {
+      filtered = filtered.filter((occ) => occ.trimester === filters.trimester);
+    }
+    if (filters.location) {
+      filtered = filtered.filter((occ) => occ.location === filters.location);
+    }
+    if (filters.paperCode) {
+      filtered = filtered.filter((occ) => {
+        const shortYear = occ.year.toString().slice(-2);
+        const occurrenceCode = `${occ.paper_code}-${shortYear}${occ.trimester} (${occ.location})`;
+        return occurrenceCode
+          .toLowerCase()
+          .includes(filters.paperCode.toLowerCase());
+      });
+    }
+
+    setFilteredOccurrences(filtered);
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      year: "",
+      trimester: "",
+      location: "",
+      paperCode: "",
+    });
+  };
+
+  const getUniqueYears = () => {
+    return [...new Set(occurrences.map((occ) => occ.year))].sort(
+      (a, b) => b - a
+    );
+  };
+
+  const getUniqueTrimesters = () => {
+    return [...new Set(occurrences.map((occ) => occ.trimester))].sort();
+  };
+
+  const getUniqueLocations = () => {
+    return [...new Set(occurrences.map((occ) => occ.location))].sort();
+  };
+
+  const handleOccurrenceClick = (occurrenceId) => {
+    navigate(`/review/${occurrenceId}`);
+  };
+
   return (
     <div className="review-page">
       <h2>Review Paper Occurrence</h2>
 
-      {/* Occurrence Selector */}
-      <div className="paper-selector">
-        <label htmlFor="occurrence-select">Select Paper Occurrence:</label>
-        <select
-          id="occurrence-select"
-          onChange={handleOccurrenceSelect}
-          disabled={loading}
-        >
-          <option value="">-- Select a paper occurrence --</option>
-          {occurrences.map((occurrence) => {
-            const shortYear = occurrence.year.toString().slice(-2);
-            const occurrenceCode = `${occurrence.paper_code}-${shortYear}${occurrence.trimester} (${occurrence.location})`;
-
-            return (
-              <option
-                key={occurrence.occurrence_id}
-                value={occurrence.occurrence_id}
-              >
-                {occurrenceCode} - {occurrence.paper_name}
-              </option>
-            );
-          })}
-        </select>
-      </div>
-
-      {/* Main Content */}
-      {selectedOccurrence && (
-        <div className="review-content">
-          {/* Paper Overview Card */}
-          <div className="overview-card">
-            <h3>Paper Overview</h3>
-            <div className="overview-grid">
-              <div className="overview-item">
-                <span className="label">Paper Code:</span>
-                <span className="value">{selectedOccurrence.paper_code}</span>
-              </div>
-              <div className="overview-item">
-                <span className="label">Paper Name:</span>
-                <span className="value">{selectedOccurrence.paper_name}</span>
-              </div>
-              <div className="overview-item">
-                <span className="label">Year:</span>
-                <span className="value">{selectedOccurrence.year}</span>
-              </div>
-              <div className="overview-item">
-                <span className="label">Trimester:</span>
-                <span className="value">{selectedOccurrence.trimester}</span>
-              </div>
-              <div className="overview-item">
-                <span className="label">Location:</span>
-                <span className="value">{selectedOccurrence.location}</span>
-              </div>
-              <div className="overview-item">
-                <span className="label">Points:</span>
-                <span className="value">
-                  {selectedOccurrence.outline_data.points}
-                </span>
-              </div>
-              <div className="overview-item">
-                <span className="label">Delivery Mode:</span>
-                <span className="value">
-                  {selectedOccurrence.outline_data.deliveryMode}
-                </span>
-              </div>
-              <div className="overview-item">
-                <span className="label">Form Status:</span>
-                <span
-                  className={`value status-${
-                    selectedOccurrence.form_status || "none"
-                  }`}
-                >
-                  {selectedOccurrence.form_status || "Not Submitted"}
-                </span>
-              </div>
-            </div>
+      {/* Filter Section */}
+      <div className="filters-section">
+        <h3>Filter Occurrences</h3>
+        <div className="filters-grid">
+          <div className="filter-item">
+            <label htmlFor="filter-year">Year:</label>
+            <select
+              id="filter-year"
+              name="year"
+              value={filters.year}
+              onChange={handleFilterChange}
+            >
+              <option value="">All Years</option>
+              {getUniqueYears().map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Grade Statistics Card */}
-          <div className="statistics-card">
-            <h3>Grade Statistics</h3>
-            <div className="stats-grid">
-              <div className="stat-item highlight">
-                <span className="stat-label">Total Students</span>
-                <span className="stat-value">
-                  {selectedOccurrence.total_students || "N/A"}
-                </span>
-              </div>
-              <div className="stat-item highlight">
-                <span className="stat-label">Pass Rate</span>
-                <span className="stat-value">
-                  {selectedOccurrence.pass_rate
-                    ? `${selectedOccurrence.pass_rate}%`
-                    : "N/A"}
-                </span>
-              </div>
-
-              <div className="stat-item">
-                <span className="stat-label">Restricted Passes</span>
-                <span className="stat-value">
-                  {selectedOccurrence.grade_rp || 0}
-                </span>
-              </div>
-            </div>
+          <div className="filter-item">
+            <label htmlFor="filter-trimester">Trimester:</label>
+            <select
+              id="filter-trimester"
+              name="trimester"
+              value={filters.trimester}
+              onChange={handleFilterChange}
+            >
+              <option value="">All Trimesters</option>
+              {getUniqueTrimesters().map((trimester) => (
+                <option key={trimester} value={trimester}>
+                  {trimester}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Course Form Information (if submitted) */}
-          {selectedOccurrence.form_status && (
-            <div className="form-card">
-              <h3>Course Form Details</h3>
-              <div className="form-info">
-                <div className="form-section">
-                  <h4>Staff Information</h4>
-                  <p>
-                    <strong>Lecturers:</strong>{" "}
-                    {selectedOccurrence.lecturers || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Tutors:</strong>{" "}
-                    {selectedOccurrence.tutors || "N/A"}
-                  </p>
-                </div>
-
-                <div className="form-section">
-                  <h4>Assessment Structure</h4>
-                  <p>
-                    <strong>Number of Items:</strong>{" "}
-                    {selectedOccurrence.assessment_item_count || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Internal/External Split:</strong>{" "}
-                    {selectedOccurrence.internal_external_split || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Assessment Types:</strong>{" "}
-                    {selectedOccurrence.assessment_types_summary || "N/A"}
-                  </p>
-                </div>
-
-                <div className="form-section">
-                  <h4>Commentary</h4>
-                  <div className="commentary-box">
-                    <h5>Major Changes:</h5>
-                    <p>
-                      {selectedOccurrence.major_changes_description ||
-                        "None reported"}
-                    </p>
-                  </div>
-
-                  {selectedOccurrence.grade_distribution_different && (
-                    <div className="commentary-box">
-                      <h5>Grade Distribution Comments:</h5>
-                      <p>{selectedOccurrence.grade_distribution_comments}</p>
-                    </div>
-                  )}
-
-                  {selectedOccurrence.other_comments && (
-                    <div className="commentary-box">
-                      <h5>Other Comments:</h5>
-                      <p>{selectedOccurrence.other_comments}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Paper Outline Information */}
-          {selectedOccurrence.outline_data && (
-            <div className="outline-card">
-              <h3>Paper Outline</h3>
-              <div className="outline-info">
-                <p>
-                  <strong>Convenor(s):</strong>{" "}
-                  {selectedOccurrence.outline_data?.convenors?.length > 0
-                    ? selectedOccurrence.outline_data.convenors.map(
-                        (conv, index) => (
-                          <span key={index}>
-                            {conv.name}
-                            {conv.email && ` (${conv.email})`}
-                            {index <
-                              selectedOccurrence.outline_data.convenors.length -
-                                1 && ", "}
-                          </span>
-                        )
-                      )
-                    : "N/A"}
-                </p>
-                <p>
-                  <strong>Delivery Mode:</strong>{" "}
-                  {selectedOccurrence.outline_data.deliveryMode || "N/A"}
-                </p>
-                <p>
-                  <strong>Location:</strong>{" "}
-                  {selectedOccurrence.outline_data.whereTaught || "N/A"}
-                </p>
-                {selectedOccurrence.outline_data.tutors?.length > 0 && (
-                  <p>
-                    <strong>Tutors:</strong>{" "}
-                    {selectedOccurrence.outline_data.tutors.map(
-                      (tutor, index) => (
-                        <span key={index}>
-                          {typeof tutor === "string"
-                            ? tutor
-                            : `${tutor.name}${
-                                tutor.email ? ` (${tutor.email})` : ""
-                              }`}
-                          {index <
-                            selectedOccurrence.outline_data.tutors.length -
-                              1 && <br />}
-                        </span>
-                      )
-                    )}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Graphs Section */}
-          <div className="graphs-section">
-            <div className="graph-card">
-              <h3>Grade Distribution</h3>
-              <p className="graph-description">
-                {selectedOccurrence.year}
-                {selectedOccurrence.trimester} for{" "}
-                {selectedOccurrence.paper_code}
-              </p>
-              <GradeDistributionChart
-                occurrenceId={selectedOccurrence.occurrence_id}
-              />
-            </div>
-
-            <div className="graph-card">
-              <h3>Historical Statistics</h3>
-              <p className="graph-description">Comparing with previous years</p>
-              <HistoricalStatsTable paperCode={selectedOccurrence.paper_code} />
-            </div>
+          <div className="filter-item">
+            <label htmlFor="filter-location">Location:</label>
+            <select
+              id="filter-location"
+              name="location"
+              value={filters.location}
+              onChange={handleFilterChange}
+            >
+              <option value="">All Locations</option>
+              {getUniqueLocations().map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="graph-card">
-            <h3>Historical Distribution</h3>
-            <p className="graph-description">Comparing with previous years</p>
-            <HistoricalDistributionChart
-              occurrenceId={selectedOccurrence.occurrence_id}
+
+          <div className="filter-item">
+            <label htmlFor="filter-paperCode">Search:</label>
+            <input
+              type="text"
+              id="filter-paperCode"
+              name="paperCode"
+              value={filters.paperCode}
+              onChange={handleFilterChange}
+              placeholder="Search by code, year, etc."
             />
           </div>
+
+          <div className="filter-item">
+            <button onClick={clearFilters} className="clear-filters-btn">
+              Clear Filters
+            </button>
+          </div>
         </div>
-      )}
+        <div className="filter-results">
+          Showing {filteredOccurrences.length} of {occurrences.length}{" "}
+          occurrences
+        </div>
+      </div>
+
+      {/* Occurrences List */}
+      <div className="occurrences-list">
+        {filteredOccurrences.length === 0 ? (
+          <p className="no-results">No occurrences match the current filters</p>
+        ) : (
+          <div className="occurrences-grid">
+            {filteredOccurrences.map((occurrence) => {
+              const shortYear = occurrence.year.toString().slice(-2);
+              const occurrenceCode = `${occurrence.paper_code}-${shortYear}${occurrence.trimester} (${occurrence.location})`;
+
+              return (
+                <div
+                  key={occurrence.occurrence_id}
+                  className="occurrence-card"
+                  onClick={() =>
+                    handleOccurrenceClick(occurrence.occurrence_id)
+                  }
+                >
+                  <div className="occurrence-code">{occurrenceCode}</div>
+                  <div className="occurrence-name">{occurrence.paper_name}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
