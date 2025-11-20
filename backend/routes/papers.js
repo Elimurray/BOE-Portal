@@ -77,7 +77,7 @@ router.get("/occurrences/incomplete", async (req, res) => {
       JOIN papers p ON o.paper_id = p.paper_id
       LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
       LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
-      WHERE o.form_complete = FALSE OR o.form_complete IS NULL
+      WHERE cf.status IS NULL OR cf.status != 'submitted'
       ORDER BY o.year DESC, o.trimester DESC, p.paper_code
     `);
 

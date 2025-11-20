@@ -70,16 +70,6 @@ router.post("/", async (req, res) => {
       ]
     );
 
-    // Mark the occurrence as having a complete form
-    await db.query(
-      `
-      UPDATE occurrences
-      SET form_complete = TRUE
-      WHERE occurrence_id = $1
-    `,
-      [occurrenceId]
-    );
-
     res.json({
       success: true,
       formId: result.rows[0].form_id,
