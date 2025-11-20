@@ -3,7 +3,7 @@
   margin: 0 auto;
 }
 
-.review-page > h2 {
+.review-page h2 {
   font-size: 1.5rem;
   font-weight: bold;
   color: #333;
@@ -14,7 +14,7 @@
 /* Paper Selector */
 .paper-selector {
   background: white;
-  padding: 0.5rem;
+  padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
@@ -29,26 +29,184 @@
 
 .paper-selector select {
   width: 100%;
-  padding: 0.25rem;
+  padding: 0.75rem;
   font-size: 1rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background-color: white;
 }
 
-.review-graph-panel {
+/* Main Content Layout */
+.review-content {
   display: flex;
-  flex-direction: row;
-  gap: 2rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  color: black;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.review-graph-panel > div {
-  flex: 1;
-  min-width: 400px;
-  min-height: 400px;
+/* Card Styles */
+.overview-card,
+.statistics-card,
+.form-card,
+.outline-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.overview-card h3,
+.statistics-card h3,
+.form-card h3,
+.outline-card h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.3rem;
+  border-bottom: 2px solid #2563eb;
+  padding-bottom: 0.5rem;
+}
+
+/* Overview Grid */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.overview-item .label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.overview-item .value {
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.overview-item .value.status-submitted {
+  color: #10b981;
+}
+
+.overview-item .value.status-draft {
+  color: #f59e0b;
+}
+
+.overview-item .value.status-none {
+  color: #ef4444;
+}
+
+/* Statistics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.stat-item {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+}
+
+.stat-item.highlight {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.stat-item.highlight .stat-value {
+  font-size: 2rem;
+}
+
+/* Form Information */
+.form-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-section h4 {
+  margin: 0 0 0.75rem 0;
+  color: #2563eb;
+  font-size: 1.1rem;
+}
+
+.form-section p {
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.commentary-box {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #2563eb;
+  margin-top: 0.75rem;
+}
+
+.commentary-box h5 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.commentary-box p {
+  margin: 0;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Outline Information */
+.outline-info p {
+  margin: 0.75rem 0;
+  color: #333;
+}
+
+/* Graphs Section */
+.graphs-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.graph-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.graph-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.graph-description {
+  margin: 0 0 1rem 0;
+  color: #666;
+  font-size: 0.9rem;
 }

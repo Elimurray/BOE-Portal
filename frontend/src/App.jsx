@@ -29,9 +29,9 @@ function App() {
 
             <div className="navbar-links">
               <NavLink to="/">Dashboard</NavLink>
-              <NavLink to="/upload">Upload CSV</NavLink>
-              <NavLink to="/form">Course Form</NavLink>
-              <NavLink to="/review">Review Paper</NavLink>
+              <NavLink to="/upload">Upload</NavLink>
+              <NavLink to="/form">Form</NavLink>
+              <NavLink to="/review">Review</NavLink>
             </div>
           </div>
         </nav>
