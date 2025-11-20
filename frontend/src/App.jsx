@@ -8,6 +8,7 @@ import {
 import Dashboard from "./components/Dashboard";
 import CSVUpload from "./components/CSVUpload";
 import CourseForm from "./components/CourseForm";
+import CourseFormFill from "./components/CourseFormFill";
 import Review from "./components/Review";
 import Logo from "./assets/Uni-of-Waikato-banner.png";
 import Crest from "./assets/crest.svg";
@@ -42,6 +43,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/upload" element={<CSVUpload />} />
             <Route path="/form" element={<CourseForm />} />
+            <Route path="/form/:occurrenceId" element={<CourseFormFill />} />
             <Route path="/review" element={<Review />} />
           </Routes>
         </div>

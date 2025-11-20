@@ -1,51 +1,26 @@
 import { useState, useEffect } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
-import {
-  getPapers,
-  getPaper,
-  submitForm,
-  scrapeOutline,
-  getOccurrences,
-  getOccurrence,
-  getOccurrencesIncomplete,
-} from "../services/api";
+import { useNavigate } from "react-router-dom";
+import { getOccurrencesIncomplete } from "../services/api";
 import "./CourseForm.css";
-import GradeDistributionChart from "./GradeDistributionChart";
-import HistoricalStatsTable from "./HistoricalStatsTable";
-import HistoricalDistributionChart from "./HistoricalDistributionChart";
 
 export default function CourseForm() {
+  const navigate = useNavigate();
   const [occurrences, setOccurrences] = useState([]);
-  const [selectedPaper, setSelectedPaper] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [scraping, setScraping] = useState(false);
-  const [formData, setFormData] = useState({
-    submittedByEmail: "",
-    submittedByName: "",
-    lecturers: "",
-    tutors: "",
-    rpCount: "",
-    assessmentItemCount: "",
-    internalExternalSplit: "",
-    assessmentTypesSummary: "",
-    deliveryMode: "",
-    majorChangesDescription: "",
-    gradeDistributionDifferent: false,
-    gradeDistributionComments: "",
-    otherComments: "",
+  const [filteredOccurrences, setFilteredOccurrences] = useState([]);
+  const [filters, setFilters] = useState({
+    year: "",
+    trimester: "",
+    location: "",
+    paperCode: "",
   });
 
   useEffect(() => {
     fetchPapers();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [occurrences, filters]);
 
   const fetchPapers = async () => {
     try {
@@ -56,372 +31,175 @@ export default function CourseForm() {
     }
   };
 
-  const handleOccurrenceSelect = async (e) => {
-    const occurrenceId = e.target.value;
-    if (!occurrenceId) {
-      setSelectedPaper(null);
-      return;
+  const applyFilters = () => {
+    let filtered = [...occurrences];
+
+    if (filters.year) {
+      filtered = filtered.filter((occ) => occ.year === parseInt(filters.year));
+    }
+    if (filters.trimester) {
+      filtered = filtered.filter((occ) => occ.trimester === filters.trimester);
+    }
+    if (filters.location) {
+      filtered = filtered.filter((occ) => occ.location === filters.location);
+    }
+    if (filters.paperCode) {
+      filtered = filtered.filter((occ) => {
+        const shortYear = occ.year.toString().slice(-2);
+        const occurrenceCode = `${occ.paper_code}-${shortYear}${occ.trimester} (${occ.location})`;
+        return occurrenceCode
+          .toLowerCase()
+          .includes(filters.paperCode.toLowerCase());
+      });
     }
 
-    setLoading(true);
-    try {
-      const response = await getOccurrence(occurrenceId);
-      const occurrence = response.data;
-      console.log(occurrence);
-      setSelectedPaper(occurrence);
-
-      // Prepopulate form with paper data
-      setFormData((prev) => ({
-        ...prev,
-        lecturers:
-          occurrence.outline?.lecturers?.map((c) => c.name).join(", ") ||
-          occurrence.outline?.convenors?.map((c) => c.name).join(", ") ||
-          "",
-        tutors: occurrence.outline?.tutors?.map((t) => t.name).join(", ") || "",
-        deliveryMode: occurrence.outline?.deliveryMode || "",
-        internalExternalSplit: occurrence.outline?.assessmentRatio || "",
-      }));
-    } catch (error) {
-      console.log("Error fetching paper:", error);
-    } finally {
-      setLoading(false);
-    }
+    setFilteredOccurrences(filtered);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const clearFilters = () => {
+    setFilters({
+      year: "",
+      trimester: "",
+      location: "",
+      paperCode: "",
+    });
+  };
 
-    if (!selectedPaper) {
-      alert("Please select a paper");
-      return;
-    }
+  const getUniqueYears = () => {
+    return [...new Set(occurrences.map((occ) => occ.year))].sort(
+      (a, b) => b - a
+    );
+  };
 
-    try {
-      const response = await submitForm({
-        occurrenceId: selectedPaper.occurrence_id,
-        ...formData,
-      });
+  const getUniqueTrimesters = () => {
+    return [...new Set(occurrences.map((occ) => occ.trimester))].sort();
+  };
 
-      if (response.data.success) {
-        alert("Form submitted successfully!");
-        // Reset form
-        setSelectedPaper(null);
-        setFormData({
-          submittedByEmail: "",
-          submittedByName: "",
-          lecturers: "",
-          tutors: "",
-          rpCount: "",
-          assessmentItemCount: "",
-          internalExternalSplit: "",
-          assessmentTypesSummary: "",
-          deliveryMode: "",
-          majorChangesDescription: "",
-          gradeDistributionDifferent: false,
-          gradeDistributionComments: "",
-          otherComments: "",
-        });
-      }
-    } catch (error) {
-      alert(
-        "Error submitting form: " +
-          (error.response?.data?.error || error.message)
-      );
-    }
+  const getUniqueLocations = () => {
+    return [...new Set(occurrences.map((occ) => occ.location))].sort();
+  };
+
+  const handleOccurrenceClick = (occurrenceId) => {
+    navigate(`/form/${occurrenceId}`);
   };
 
   return (
     <div className="course-form-page">
       <h2>Course Form Submission</h2>
 
-      {/* Occurrence Selector */}
-      <div className="paper-selector">
-        <label htmlFor="occurrence-select">Select Paper Occurrence:</label>
-        <select
-          id="occurrence-select"
-          onChange={handleOccurrenceSelect}
-          disabled={loading}
-        >
-          <option value="">-- Select a paper occurrence --</option>
-          {occurrences.map((occurrence) => {
-            const shortYear = occurrence.year.toString().slice(-2);
-            const occurrenceCode = `${occurrence.paper_code}-${shortYear}${occurrence.trimester} (${occurrence.location})`;
-
-            return (
-              <option
-                key={occurrence.occurrence_id}
-                value={occurrence.occurrence_id}
-              >
-                {occurrenceCode} - {occurrence.paper_name}
-              </option>
-            );
-          })}
-        </select>
-        {scraping && (
-          <span className="loading-text">Scraping paper outline...</span>
-        )}
-      </div>
-
-      {selectedPaper && (
-        <div className="split-layout">
-          {/* LEFT: Form */}
-          <div className="form-panel">
-            <div className="paper-header">
-              <h3>
-                {selectedPaper.paper_code} - {selectedPaper.year}{" "}
-                {selectedPaper.trimester} ({selectedPaper.location})
-              </h3>
-              <p className="paper-stats">
-                {selectedPaper.gradeDistribution?.total_students || 0} students
-                | {selectedPaper.gradeDistribution?.pass_rate || 0}% pass rate
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              {/* Submitter Info */}
-              <section className="form-section">
-                <h4>Submitter Information</h4>
-                <div className="form-group">
-                  <label>Email *</label>
-                  <input
-                    type="email"
-                    name="submittedByEmail"
-                    value={formData.submittedByEmail}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Name *</label>
-                  <input
-                    type="text"
-                    name="submittedByName"
-                    value={formData.submittedByName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </section>
-
-              {/* Staff Info */}
-              <section className="form-section">
-                <h4>Staff Information</h4>
-                <div className="form-group">
-                  <label>Lecturer(s)</label>
-                  <input
-                    type="text"
-                    name="lecturers"
-                    value={formData.lecturers}
-                    onChange={handleInputChange}
-                    placeholder="Prepopulated from paper outline"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Tutor(s)</label>
-                  <input
-                    type="text"
-                    name="tutors"
-                    value={formData.tutors}
-                    onChange={handleInputChange}
-                    placeholder="Prepopulated from paper outline"
-                  />
-                </div>
-              </section>
-
-              {/* Grade Statistics */}
-              <section className="form-section">
-                <h4>Grade Statistics</h4>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Student Count</label>
-                    <input
-                      type="number"
-                      value={
-                        selectedPaper.gradeDistribution?.total_students || 0
-                      }
-                      readOnly
-                      className="readonly"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Pass Rate (%)</label>
-                    <input
-                      type="number"
-                      value={selectedPaper.gradeDistribution?.pass_rate || 0}
-                      readOnly
-                      className="readonly"
-                    />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Pass / Fail</label>
-                  <input
-                    type="text"
-                    value={`${
-                      selectedPaper.gradeDistribution?.pass_count || 0
-                    } / ${
-                      (selectedPaper.gradeDistribution?.total_students || 0) -
-                      (selectedPaper.gradeDistribution?.pass_count || 0)
-                    }`}
-                    readOnly
-                    className="readonly"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Number of Restricted Passes (RP) *</label>
-                  <input
-                    type="number"
-                    name="rpCount"
-                    value={formData.rpCount}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                  />
-                </div>
-              </section>
-
-              {/* Assessment Structure */}
-              <section className="form-section">
-                <h4>Assessment Structure</h4>
-                <div className="form-group">
-                  <label>Number of Assessment Items *</label>
-                  <input
-                    type="number"
-                    name="assessmentItemCount"
-                    value={formData.assessmentItemCount}
-                    onChange={handleInputChange}
-                    required
-                    min="1"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Internal / External Split *</label>
-                  <input
-                    type="text"
-                    name="internalExternalSplit"
-                    value={formData.internalExternalSplit}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 60/40 or 100/0"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Assessment Types Summary *</label>
-                  <textarea
-                    name="assessmentTypesSummary"
-                    value={formData.assessmentTypesSummary}
-                    onChange={handleInputChange}
-                    placeholder="e.g., practical assignment, quiz, written test"
-                    rows="3"
-                    required
-                  />
-                </div>
-              </section>
-
-              {/* Delivery Information */}
-              <section className="form-section">
-                <h4>Delivery Information</h4>
-                <div className="form-group">
-                  <label>Delivery Mode *</label>
-                  <select
-                    name="deliveryMode"
-                    value={formData.deliveryMode}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select mode</option>
-                    <option value="OnCampus">On Campus</option>
-                    <option value="Online">Online</option>
-                    <option value="Blended">Blended</option>
-                  </select>
-                </div>
-              </section>
-
-              {/* Commentary */}
-              <section className="form-section">
-                <h4>Reflective Commentary</h4>
-                <div className="form-group">
-                  <label>Major Changes Since Last Year</label>
-                  <textarea
-                    name="majorChangesDescription"
-                    value={formData.majorChangesDescription}
-                    onChange={handleInputChange}
-                    rows="4"
-                    placeholder="Describe any significant changes to content, assessment, or delivery"
-                  />
-                </div>
-                <div className="form-group checkbox-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="gradeDistributionDifferent"
-                      checked={formData.gradeDistributionDifferent}
-                      onChange={handleInputChange}
-                    />
-                    Grade distribution significantly different from previous
-                    instances?
-                  </label>
-                </div>
-                {formData.gradeDistributionDifferent && (
-                  <div className="form-group">
-                    <label>Please Comment on Differences</label>
-                    <textarea
-                      name="gradeDistributionComments"
-                      value={formData.gradeDistributionComments}
-                      onChange={handleInputChange}
-                      rows="3"
-                    />
-                  </div>
-                )}
-                <div className="form-group">
-                  <label>Any Other Comments</label>
-                  <textarea
-                    name="otherComments"
-                    value={formData.otherComments}
-                    onChange={handleInputChange}
-                    rows="4"
-                  />
-                </div>
-              </section>
-
-              <button type="submit" className="submit-button">
-                Submit Form
-              </button>
-            </form>
+      {/* Filter Section */}
+      <div className="filters-section">
+        <h3>Filter Occurrences</h3>
+        <div className="filters-grid">
+          <div className="filter-item">
+            <label htmlFor="filter-year">Year:</label>
+            <select
+              id="filter-year"
+              name="year"
+              value={filters.year}
+              onChange={handleFilterChange}
+            >
+              <option value="">All Years</option>
+              {getUniqueYears().map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* RIGHT: Graphs */}
-          <div className="graph-panel">
-            <h3>Grade Distribution</h3>
-            <p className="graph-description">
-              {selectedPaper.year}
-              {selectedPaper.trimester} for {selectedPaper.paper_code}
-            </p>
-            <GradeDistributionChart
-              occurrenceId={selectedPaper.occurrence_id}
-            />
+          <div className="filter-item">
+            <label htmlFor="filter-trimester">Trimester:</label>
+            <select
+              id="filter-trimester"
+              name="trimester"
+              value={filters.trimester}
+              onChange={handleFilterChange}
+            >
+              <option value="">All Trimesters</option>
+              {getUniqueTrimesters().map((trimester) => (
+                <option key={trimester} value={trimester}>
+                  {trimester}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <h3>Historical Statistics</h3>
-            <p className="graph-description">Comparing with previous years</p>
-            <HistoricalStatsTable paperCode={selectedPaper.paper_code} />
+          <div className="filter-item">
+            <label htmlFor="filter-location">Location:</label>
+            <select
+              id="filter-location"
+              name="location"
+              value={filters.location}
+              onChange={handleFilterChange}
+            >
+              <option value="">All Locations</option>
+              {getUniqueLocations().map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <h3>Historical Distribution</h3>
-            <p className="graph-description">Comparing with previous years</p>
-            <HistoricalDistributionChart
-              occurrenceId={selectedPaper.occurrence_id}
+          <div className="filter-item">
+            <label htmlFor="filter-paperCode">Search:</label>
+            <input
+              type="text"
+              id="filter-paperCode"
+              name="paperCode"
+              value={filters.paperCode}
+              onChange={handleFilterChange}
+              placeholder="Search by code, year, etc."
             />
+          </div>
+
+          <div className="filter-item">
+            <button onClick={clearFilters} className="clear-filters-btn">
+              Clear Filters
+            </button>
           </div>
         </div>
-      )}
+        <div className="filter-results">
+          Showing {filteredOccurrences.length} of {occurrences.length}{" "}
+          occurrences
+        </div>
+      </div>
+
+      {/* Occurrences List */}
+      <div className="occurrences-list">
+        {filteredOccurrences.length === 0 ? (
+          <p className="no-results">No occurrences match the current filters</p>
+        ) : (
+          <div className="occurrences-grid">
+            {filteredOccurrences.map((occurrence) => {
+              const shortYear = occurrence.year.toString().slice(-2);
+              const occurrenceCode = `${occurrence.paper_code}-${shortYear}${occurrence.trimester} (${occurrence.location})`;
+
+              return (
+                <div
+                  key={occurrence.occurrence_id}
+                  className="occurrence-card"
+                  onClick={() =>
+                    handleOccurrenceClick(occurrence.occurrence_id)
+                  }
+                >
+                  <div className="occurrence-code">{occurrenceCode}</div>
+                  <div className="occurrence-name">{occurrence.paper_name}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
