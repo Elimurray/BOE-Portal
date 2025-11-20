@@ -1,6 +1,6 @@
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -89,7 +89,7 @@ export default function HistoricalDistributionChart({ occurrenceId }) {
   }
 
   // Color palette for all years (with different opacity for current year)
-  const areaColors = [
+  const lineColors = [
     { stroke: "#e7d800", fill: "#e7d800", fillOpacity: 0.3 },
     { stroke: "#21c244", fill: "#21c244", fillOpacity: 0.3 },
     { stroke: "#970fd6", fill: "#970fd6", fillOpacity: 0.3 },
@@ -101,7 +101,7 @@ export default function HistoricalDistributionChart({ occurrenceId }) {
   return (
     <div className="chart-container">
       <ResponsiveContainer width="100%" height={400}>
-        <AreaChart
+        <LineChart
           data={chartData}
           margin={{
             top: 20,
@@ -122,12 +122,12 @@ export default function HistoricalDistributionChart({ occurrenceId }) {
           <Tooltip formatter={(value) => `${value}`} />
           <Legend />
 
-          {/* All years as area charts */}
+          {/* All years as line charts */}
           {years.map((year, index) => {
             const isCurrentYear = index === years.length - 1;
-            const colors = areaColors[index % areaColors.length];
+            const colors = lineColors[index % lineColors.length];
             return (
-              <Area
+              <Line
                 key={year}
                 type="monotone"
                 dataKey={year}
@@ -139,7 +139,7 @@ export default function HistoricalDistributionChart({ occurrenceId }) {
               />
             );
           })}
-        </AreaChart>
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );

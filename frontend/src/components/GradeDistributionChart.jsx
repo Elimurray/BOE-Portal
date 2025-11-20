@@ -9,11 +9,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useEffect, useState } from "react";
-import { getGradeDistribution } from "../services/api";
+import { getGradeDistribution, getOccurrence } from "../services/api";
 import "./GradeDistributionChart.css";
 
 export default function GradeDistributionChart({ occurrenceId }) {
   const [data, setData] = useState([]);
+  const [occurrenceCode, setOccurrenceCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,6 +27,7 @@ export default function GradeDistributionChart({ occurrenceId }) {
 
       try {
         const response = await getGradeDistribution(occurrenceId);
+        const occurrenceResponse = await getOccurrence(occurrenceId);
 
         // Transform data for Recharts
         const chartData = response.data.labels.map((label, index) => ({
@@ -33,7 +35,11 @@ export default function GradeDistributionChart({ occurrenceId }) {
           count: response.data.data[index],
         }));
 
+        const occurrenceCode =
+          occurrenceResponse.data.year + occurrenceResponse.data.trimester;
+
         setData(chartData);
+        setOccurrenceCode(occurrenceCode);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -62,10 +68,16 @@ export default function GradeDistributionChart({ occurrenceId }) {
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="range" />
-          <YAxis />
+          <YAxis
+            label={{
+              value: "Student number",
+              angle: -90,
+              position: "insideLeft",
+            }}
+          />
           <Tooltip />
           <Legend />
-          <Bar dataKey="count" fill="#2563eb" name="Number of Students" />
+          <Bar dataKey="count" fill="#2563eb" name={occurrenceCode} />
         </BarChart>
       </ResponsiveContainer>
     </div>
