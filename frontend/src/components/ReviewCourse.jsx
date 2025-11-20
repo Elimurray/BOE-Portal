@@ -8,6 +8,7 @@ import HistoricalDistributionChart from "./HistoricalDistributionChart";
 import HistoricalStatsTable from "./HistoricalStatsTable";
 
 export default function ReviewCourse() {
+  const navigate = useNavigate();
   const { occurrenceId } = useParams();
   const [selectedOccurrence, setSelectedOccurrence] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -54,6 +55,9 @@ export default function ReviewCourse() {
 
   return (
     <div className="review-page">
+      <button className="back-button" onClick={() => navigate("/review")}>
+        ← Back to Search
+      </button>
       <h2>Review Paper Occurrence</h2>
 
       {/* Main Content */}
