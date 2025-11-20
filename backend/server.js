@@ -8,7 +8,7 @@ import papersRouter from "./routes/papers.js";
 import formsRouter from "./routes/forms.js";
 import scraperRouter from "./routes/scraper.js";
 import graphsRouter from "./routes/graphs.js";
-import occurrencesRouter from "./routes/occurrences.js";
+import reviewRouter from "./routes/review.js";
 
 dotenv.config();
 
@@ -26,7 +26,7 @@ app.use("/api/papers", papersRouter);
 app.use("/api/forms", formsRouter);
 app.use("/api/scraper", scraperRouter);
 app.use("/api/graphs", graphsRouter);
-app.use("/api/occurrences", occurrencesRouter);
+app.use("/api/review", reviewRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {

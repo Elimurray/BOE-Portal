@@ -3,20 +3,19 @@ import { uploadCSV, scrapeOutline, saveOutline } from "../services/api";
 import "./CSVUpload.css";
 
 export default function CSVUpload() {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [scraping, setScraping] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [results, setResults] = useState([]);
+  const [errors, setErrors] = useState([]);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setResult(null);
-    setError(null);
+    setFiles(Array.from(e.target.files));
+    setResults([]);
+    setErrors([]);
   };
 
   const handleScrapeAndSaveOutline = async (paper) => {
-    setScraping(true);
     try {
       console.log("Starting scrape for paper:", paper);
 
@@ -31,61 +30,81 @@ export default function CSVUpload() {
 
       if (response.data.success) {
         const scrapedData = response.data.data;
+        console.log(
+          "Attempting to save outline for occurrence_id:",
+          paper.occurrenceId
+        );
 
-        console.log("Attempting to save outline for paper_id:", paper.paperId);
-        console.log("Scraped data:", scrapedData);
-
-        // Save the scraped data to the database
-        const saveResponse = await saveOutline(paper.occurrenceId, scrapedData);
-
-        console.log("Save response:", saveResponse.data);
+        await saveOutline(paper.occurrenceId, scrapedData);
         console.log("Outline scraped and saved successfully");
+        return { success: true };
       } else {
         console.error("Scrape was not successful:", response.data);
+        return { success: false, error: "Scrape failed" };
       }
     } catch (error) {
       console.error("Error in handleScrapeAndSaveOutline:", error);
-      console.error("Error response:", error.response?.data);
-    } finally {
-      setScraping(false);
+      return { success: false, error: error.message };
     }
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
 
     setUploading(true);
-    setError(null);
+    setResults([]);
+    setErrors([]);
+    setProgress({ current: 0, total: files.length });
 
-    try {
-      const response = await uploadCSV(file);
-      setResult(response.data);
-      setFile(null);
+    const uploadResults = [];
+    const uploadErrors = [];
 
-      // Reset file input
-      document.getElementById("csv-input").value = "";
+    // Process files sequentially to avoid overwhelming the server
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setProgress({ current: i + 1, total: files.length });
 
-      // After successful upload, scrape and save outline if we have paper info
-      if (
-        response.data.code &&
-        response.data.year &&
-        response.data.trimester &&
-        response.data.location
-      ) {
-        console.log("CSV upload response data:", response.data);
-        await handleScrapeAndSaveOutline({
-          occurrenceId: response.data.occurrenceId,
-          code: response.data.code,
-          year: response.data.year,
-          trimester: response.data.trimester,
-          location: response.data.location,
+      try {
+        // Upload CSV
+        const response = await uploadCSV(file);
+
+        // Attempt to scrape outline if we have the necessary info
+        let scrapeResult = null;
+        if (
+          response.data.code &&
+          response.data.year &&
+          response.data.trimester &&
+          response.data.location
+        ) {
+          scrapeResult = await handleScrapeAndSaveOutline({
+            occurrenceId: response.data.occurrenceId,
+            code: response.data.code,
+            year: response.data.year,
+            trimester: response.data.trimester,
+            location: response.data.location,
+          });
+        }
+
+        uploadResults.push({
+          fileName: file.name,
+          ...response.data,
+          scraped: scrapeResult?.success || false,
+        });
+      } catch (err) {
+        uploadErrors.push({
+          fileName: file.name,
+          error: err.response?.data?.error || "Upload failed",
         });
       }
-    } catch (err) {
-      setError(err.response?.data?.error || "Upload failed");
-    } finally {
-      setUploading(false);
     }
+
+    setResults(uploadResults);
+    setErrors(uploadErrors);
+    setFiles([]);
+    setUploading(false);
+
+    // Reset file input
+    document.getElementById("csv-input").value = "";
   };
 
   return (
@@ -100,42 +119,65 @@ export default function CSVUpload() {
             accept=".csv"
             onChange={handleFileChange}
             className="file-input"
+            multiple
           />
 
-          {file && (
-            <p className="file-name">
-              Selected: <strong>{file.name}</strong>
-            </p>
+          {files.length > 0 && (
+            <div className="file-list">
+              <p>
+                <strong>{files.length}</strong> file(s) selected:
+              </p>
+              <ul>
+                {files.map((file, idx) => (
+                  <li key={idx}>{file.name}</li>
+                ))}
+              </ul>
+            </div>
           )}
 
           <button
             onClick={handleUpload}
-            disabled={!file || uploading || scraping}
+            disabled={files.length === 0 || uploading}
             className="upload-button"
           >
             {uploading
-              ? "Uploading..."
-              : scraping
-              ? "Scraping outline..."
-              : "Upload CSV"}
+              ? `Uploading... (${progress.current}/${progress.total})`
+              : `Upload ${files.length} CSV${files.length !== 1 ? "s" : ""}`}
           </button>
         </div>
       </div>
 
-      {error && (
+      {errors.length > 0 && (
         <div className="alert alert-error">
           <span className="alert-icon">❌</span>
-          <span>{error}</span>
+          <div>
+            <strong>Failed uploads ({errors.length}):</strong>
+            <ul>
+              {errors.map((err, idx) => (
+                <li key={idx}>
+                  <strong>{err.fileName}</strong>: {err.error}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
-      {result && (
+      {results.length > 0 && (
         <div className="alert alert-success">
           <span className="alert-icon">✓</span>
-          <span>
-            Uploaded <strong>{result.studentCount}</strong> students for{" "}
-            <strong>{result.paperCode}</strong>
-          </span>
+          <div>
+            <strong>Successfully uploaded ({results.length}):</strong>
+            <ul>
+              {results.map((result, idx) => (
+                <li key={idx}>
+                  <strong>{result.paperCode}</strong>: {result.studentCount}{" "}
+                  students
+                  {result.scraped && " (outline scraped)"}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>

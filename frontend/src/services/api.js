@@ -28,8 +28,7 @@ export const saveOutline = (occurrenceId, scrapedData) => {
   });
 };
 
-export const getOccurrenceReview = (id) =>
-  api.get(`/occurrences/occurrences/${id}`);
+export const getOccurrenceReview = (id) => api.get(`/review/occurrences/${id}`);
 
 export const getGradeDistribution = (occurrenceId) =>
   api.get(`/graphs/${occurrenceId}/distribution`);
