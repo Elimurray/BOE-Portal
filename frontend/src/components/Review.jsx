@@ -18,6 +18,7 @@ export default function Review() {
     trimester: "",
     location: "",
     paperCode: "",
+    status: "",
   });
 
   useEffect(() => {
@@ -59,6 +60,7 @@ export default function Review() {
 
   const applyFilters = () => {
     let filtered = [...occurrences];
+    console.log("Sample occurrence:", occurrences[0]);
 
     if (filters.year) {
       filtered = filtered.filter((occ) => occ.year === parseInt(filters.year));
@@ -78,6 +80,15 @@ export default function Review() {
           .includes(filters.paperCode.toLowerCase());
       });
     }
+    if (filters.status) {
+      if (filters.status === "submitted") {
+        filtered = filtered.filter((occ) => occ.form_status === "submitted");
+      } else if (filters.status === "pending") {
+        filtered = filtered.filter(
+          (occ) => !occ.form_status || occ.form_status !== "submitted"
+        );
+      }
+    }
 
     setFilteredOccurrences(filtered);
   };
@@ -96,6 +107,7 @@ export default function Review() {
       trimester: "",
       location: "",
       paperCode: "",
+      status: "",
     });
   };
 
@@ -186,6 +198,19 @@ export default function Review() {
               onChange={handleFilterChange}
               placeholder="Search by code, year, etc."
             />
+          </div>
+          <div className="filter-item">
+            <label htmlFor="filter-status">Form Status:</label>
+            <select
+              id="filter-status"
+              name="status"
+              value={filters.status}
+              onChange={handleFilterChange}
+            >
+              <option value="">All Statuses</option>
+              <option value="submitted">Submitted</option>
+              <option value="pending">Not Submitted</option>
+            </select>
           </div>
 
           <div className="filter-item">
