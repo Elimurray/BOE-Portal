@@ -90,13 +90,13 @@ export default function ReviewCourse() {
               <div className="overview-item">
                 <span className="label">Points:</span>
                 <span className="value">
-                  {selectedOccurrence.outline_data.points}
+                  {selectedOccurrence.outline_data?.points || "N/A"}
                 </span>
               </div>
               <div className="overview-item">
                 <span className="label">Delivery Mode:</span>
                 <span className="value">
-                  {selectedOccurrence.outline_data.deliveryMode}
+                  {selectedOccurrence.outline_data?.deliveryMode || "N/A"}
                 </span>
               </div>
               <div className="overview-item">

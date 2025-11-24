@@ -30,24 +30,28 @@ router.get("/", async (req, res) => {
 router.get("/occurrences", async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT 
-        o.occurrence_id,
-        o.paper_id,
-        p.paper_code,
-        p.paper_name,
-        o.year,
-        o.trimester,
-        o.location,
-        o.points,
-        o.delivery_mode,
-        gd.total_students,
-        gd.pass_rate,
-        cf.status as form_status
-      FROM occurrences o
-      JOIN papers p ON o.paper_id = p.paper_id
-      LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
-      LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
-      ORDER BY o.year DESC, o.trimester DESC, p.paper_code
+      SELECT * FROM (
+        SELECT DISTINCT ON (o.occurrence_id)
+          o.occurrence_id,
+          o.paper_id,
+          p.paper_code,
+          p.paper_name,
+          o.year,
+          o.trimester,
+          o.location,
+          o.points,
+          o.delivery_mode,
+          gd.total_students,
+          gd.pass_rate,
+          cf.status as form_status,
+          cf.submission_date
+        FROM occurrences o
+        JOIN papers p ON o.paper_id = p.paper_id
+        LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
+        LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
+        ORDER BY o.occurrence_id, cf.submission_date DESC NULLS LAST
+      ) AS unique_occurrences
+      ORDER BY year DESC, trimester DESC, paper_code
     `);
 
     res.json(result.rows);
@@ -60,25 +64,29 @@ router.get("/occurrences", async (req, res) => {
 router.get("/occurrences/incomplete", async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT 
-        o.occurrence_id,
-        o.paper_id,
-        p.paper_code,
-        p.paper_name,
-        o.year,
-        o.trimester,
-        o.location,
-        o.points,
-        o.delivery_mode,
-        gd.total_students,
-        gd.pass_rate,
-        cf.status as form_status
-      FROM occurrences o
-      JOIN papers p ON o.paper_id = p.paper_id
-      LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
-      LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
-      WHERE cf.status IS NULL OR cf.status != 'submitted'
-      ORDER BY o.year DESC, o.trimester DESC, p.paper_code
+      SELECT * FROM (
+        SELECT DISTINCT ON (o.occurrence_id)
+          o.occurrence_id,
+          o.paper_id,
+          p.paper_code,
+          p.paper_name,
+          o.year,
+          o.trimester,
+          o.location,
+          o.points,
+          o.delivery_mode,
+          gd.total_students,
+          gd.pass_rate,
+          cf.status as form_status,
+          cf.submission_date
+        FROM occurrences o
+        JOIN papers p ON o.paper_id = p.paper_id
+        LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
+        LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
+        WHERE cf.status IS NULL OR cf.status != 'submitted'
+        ORDER BY o.occurrence_id, cf.submission_date DESC NULLS LAST
+      ) AS unique_occurrences
+      ORDER BY year DESC, trimester DESC, paper_code
     `);
 
     res.json(result.rows);
