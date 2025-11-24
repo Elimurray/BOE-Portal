@@ -11,6 +11,7 @@ import CourseForm from "./components/CourseForm";
 import CourseFormFill from "./components/CourseFormFill";
 import Review from "./components/Review";
 import ReviewCourse from "./components/ReviewCourse";
+import Present from "./components/Present";
 import Logo from "./assets/Uni-of-Waikato-banner.png";
 import Crest from "./assets/crest.svg";
 import "./App.css";
@@ -34,6 +35,7 @@ function App() {
               <NavLink to="/upload">Upload</NavLink>
               <NavLink to="/form">Form</NavLink>
               <NavLink to="/review">Review</NavLink>
+              <NavLink to="/present">Present</NavLink>
             </div>
           </div>
         </nav>
@@ -47,6 +49,7 @@ function App() {
             <Route path="/form/:occurrenceId" element={<CourseFormFill />} />
             <Route path="/review" element={<Review />} />
             <Route path="/review/:occurrenceId" element={<ReviewCourse />} />
+            <Route path="/present" element={<Present />} />
           </Routes>
         </div>
       </div>
