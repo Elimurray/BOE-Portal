@@ -39,8 +39,7 @@ router.get("/occurrences", async (req, res) => {
           o.year,
           o.trimester,
           o.location,
-          o.points,
-          o.delivery_mode,
+          
           gd.total_students,
           gd.pass_rate,
           cf.status as form_status,
@@ -73,8 +72,7 @@ router.get("/occurrences/incomplete", async (req, res) => {
           o.year,
           o.trimester,
           o.location,
-          o.points,
-          o.delivery_mode,
+          
           gd.total_students,
           gd.pass_rate,
           cf.status as form_status,
