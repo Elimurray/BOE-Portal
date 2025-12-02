@@ -3,6 +3,8 @@
   text-align: left;
 }
 
+
+
 .app {
   min-height: 100vh;
   background-color: #f5f5f5;
@@ -13,12 +15,15 @@
   align-items: center;
   gap: 2rem;
 }
+
 .banner img {
   height: 60px;
 }
+
 .banner .crest {
   padding: 20px 0;
 }
+
 /* Navigation */
 .navbar {
   background-color: white;

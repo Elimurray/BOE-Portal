@@ -8,12 +8,38 @@ import HistoricalStatsTable from "./HistoricalStatsTable";
 
 export default function Present() {
   const navigate = useNavigate();
-  const [occurrences, setOccurrences] = useState([]);
+  const [allOccurrences, setAllOccurrences] = useState([]);
+  const [filteredOccurrences, setFilteredOccurrences] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+
+  // Filter states
+  const [filters, setFilters] = useState({
+    trimester: "all",
+    year: "all",
+    location: "all",
+  });
 
   useEffect(() => {
     fetchOccurrences();
+  }, []);
+
+  // Apply filters whenever filter state or occurrences change
+  useEffect(() => {
+    applyFilters();
+  }, [filters, allOccurrences]);
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   // Keyboard navigation
@@ -26,13 +52,23 @@ export default function Present() {
         e.preventDefault();
         previousOccurrence();
       } else if (e.key === "Escape") {
-        navigate("/review");
+        if (isFullscreen) {
+          toggleFullscreen();
+        } else {
+          navigate("/review");
+        }
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === "h" || e.key === "H") {
+        e.preventDefault();
+        setShowFilters(!showFilters);
       }
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [currentIndex, occurrences]);
+  }, [currentIndex, filteredOccurrences, isFullscreen, showFilters]);
 
   const fetchOccurrences = async () => {
     setLoading(true);
@@ -42,7 +78,7 @@ export default function Present() {
       const submitted = response.data.filter(
         (occ) => occ.form_status === "submitted"
       );
-      setOccurrences(submitted);
+      setAllOccurrences(submitted);
     } catch (error) {
       console.error("Error fetching occurrences:", error);
     } finally {
@@ -50,8 +86,49 @@ export default function Present() {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...allOccurrences];
+
+    if (filters.trimester !== "all") {
+      filtered = filtered.filter((occ) => occ.trimester === filters.trimester);
+    }
+
+    if (filters.year !== "all") {
+      filtered = filtered.filter(
+        (occ) => occ.year.toString() === filters.year
+      );
+    }
+
+    if (filters.location !== "all") {
+      filtered = filtered.filter((occ) => occ.location === filters.location);
+    }
+
+    setFilteredOccurrences(filtered);
+    // Reset to first occurrence when filters change
+    if (currentIndex >= filtered.length) {
+      setCurrentIndex(0);
+    }
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }));
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error("Error attempting to enable fullscreen:", err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   const nextOccurrence = () => {
-    if (currentIndex < occurrences.length - 1) {
+    if (currentIndex < filteredOccurrences.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
@@ -62,11 +139,26 @@ export default function Present() {
     }
   };
 
+  // Get unique values for filter dropdowns
+  const getUniqueYears = () => {
+    const years = [...new Set(allOccurrences.map((occ) => occ.year))].sort(
+      (a, b) => b - a
+    );
+    return years;
+  };
+
+  const getUniqueLocations = () => {
+    const locations = [
+      ...new Set(allOccurrences.map((occ) => occ.location)),
+    ].sort();
+    return locations;
+  };
+
   if (loading) {
     return <div className="present-page loading">Loading...</div>;
   }
 
-  if (occurrences.length === 0) {
+  if (allOccurrences.length === 0) {
     return (
       <div className="present-page">
         <div className="no-data">
@@ -77,21 +169,111 @@ export default function Present() {
     );
   }
 
-  const current = occurrences[currentIndex];
+  if (filteredOccurrences.length === 0) {
+    return (
+      <div className="present-page">
+        <div className="no-data">
+          <h2>No occurrences match the selected filters</h2>
+          <button onClick={() => setFilters({ trimester: "all", year: "all", location: "all" })}>
+            Clear Filters
+          </button>
+          <button onClick={() => navigate("/review")}>Back to Review</button>
+        </div>
+      </div>
+    );
+  }
+
+  const current = filteredOccurrences[currentIndex];
   const shortYear = current.year.toString().slice(-2);
   const occurrenceCode = `${current.paper_code}-${shortYear}${current.trimester} (${current.location})`;
 
   return (
-    <div className="present-page">
-      {/* Header with navigation */}
+    <div className={`present-page ${isFullscreen ? "fullscreen" : ""}`}>
+      {/* Header with navigation and filters */}
       <div className="present-header">
-        <button className="back-button" onClick={() => navigate("/")}>
+        <button className="exit-button" onClick={() => navigate("/review")}>
           Exit Presentation
         </button>
+
+        <div className="header-controls">
+          <button
+            className="filter-toggle-btn"
+            onClick={() => setShowFilters(!showFilters)}
+            title="Toggle filters (H)"
+          >
+            {showFilters ? "Hide Filters" : "Show Filters"}
+          </button>
+          <button
+            className="fullscreen-btn"
+            onClick={toggleFullscreen}
+            title="Toggle fullscreen (F)"
+          >
+            {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          </button>
+        </div>
+
         <div className="progress">
-          {currentIndex + 1} / {occurrences.length}
+          {currentIndex + 1} / {filteredOccurrences.length}
         </div>
       </div>
+
+      {/* Filters bar */}
+      {showFilters && (
+        <div className="filters-bar">
+          <div className="filter-group">
+            <label>Trimester:</label>
+            <select
+              value={filters.trimester}
+              onChange={(e) => handleFilterChange("trimester", e.target.value)}
+            >
+              <option value="all">All</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="X">X</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Year:</label>
+            <select
+              value={filters.year}
+              onChange={(e) => handleFilterChange("year", e.target.value)}
+            >
+              <option value="all">All</option>
+              {getUniqueYears().map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Location:</label>
+            <select
+              value={filters.location}
+              onChange={(e) => handleFilterChange("location", e.target.value)}
+            >
+              <option value="all">All</option>
+              {getUniqueLocations().map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            className="clear-filters-btn"
+            onClick={() =>
+              setFilters({ trimester: "all", year: "all", location: "all" })
+            }
+          >
+            Clear All
+          </button>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="present-content">
@@ -131,7 +313,7 @@ export default function Present() {
       {/* Navigation controls */}
       <div className="present-navigation">
         <button
-          className="back-button"
+          className="nav-button"
           onClick={previousOccurrence}
           disabled={currentIndex === 0}
         >
@@ -142,7 +324,7 @@ export default function Present() {
             value={currentIndex}
             onChange={(e) => setCurrentIndex(parseInt(e.target.value))}
           >
-            {occurrences.map((occ, idx) => {
+            {filteredOccurrences.map((occ, idx) => {
               const year = occ.year.toString().slice(-2);
               const code = `${occ.paper_code}-${year}${occ.trimester} (${occ.location})`;
               return (
@@ -154,9 +336,9 @@ export default function Present() {
           </select>
         </div>
         <button
-          className="back-button"
+          className="nav-button"
           onClick={nextOccurrence}
-          disabled={currentIndex === occurrences.length - 1}
+          disabled={currentIndex === filteredOccurrences.length - 1}
         >
           Next →
         </button>
@@ -164,7 +346,7 @@ export default function Present() {
 
       {/* Keyboard shortcuts hint */}
       <div className="keyboard-hint">
-        Use ← → arrow keys or space to navigate • ESC to exit
+        Use ← → or Space to navigate • F for fullscreen • H to hide filters • ESC to exit
       </div>
     </div>
   );
