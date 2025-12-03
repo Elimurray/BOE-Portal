@@ -62,7 +62,7 @@ body:has(.present-page.fullscreen) .navbar {
 }
 
 .present-page.fullscreen .graph-section {
-  padding: 15px;
+  padding: 10px;
 }
 
 .present-page.fullscreen .graph-section h3 {
@@ -216,6 +216,7 @@ body:has(.present-page.fullscreen) .navbar {
   color: #4a5568;
   font-weight: 400;
   margin-bottom: 0px;
+  margin-top: 0px;
 }
 
 .occurrence-stats {
@@ -239,19 +240,22 @@ body:has(.present-page.fullscreen) .navbar {
 .graphs-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30px;
+  gap: 15px;
 }
 
 .graph-section {
   background: #f7fafc;
-  padding: 30px;
+  padding: 10px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.graph-section.full-width {
-  grid-column: 1 / -1;
+.graph-section.left {
+  width: 50vw;
 }
+/* .graph-section.right {
+  width: 18vw;
+} */
 
 .graph-section h3 {
   font-size: 1.5rem;

@@ -184,10 +184,7 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
         gd.grade_b_plus, gd.grade_b, gd.grade_b_minus,
         gd.grade_c_plus, gd.grade_c, gd.grade_c_minus,
         gd.grade_d, gd.grade_e,
-        (gd.grade_a_plus + gd.grade_a + gd.grade_a_minus +
-         gd.grade_b_plus + gd.grade_b + gd.grade_b_minus +
-         gd.grade_c_plus + gd.grade_c + gd.grade_c_minus +
-         gd.grade_d + gd.grade_e) as total_students
+        gd.total_students
       FROM occurrences o
       JOIN papers p ON o.paper_id = p.paper_id
       LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
@@ -203,24 +200,23 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
       return res.json({ data: [], message: "No historical data available" });
     }
 
-    // Convert raw counts to percentages for each year
+    // Return raw counts, not percentages
     const distributions = result.rows.map((row) => {
-      const total = parseInt(row.total_students);
       return {
         year: `${row.year} ${row.trimester}`,
         occurrenceId: row.occurrence_id,
         data: {
-          "A+": ((row.grade_a_plus / total) * 100).toFixed(1),
-          A: ((row.grade_a / total) * 100).toFixed(1),
-          "A-": ((row.grade_a_minus / total) * 100).toFixed(1),
-          "B+": ((row.grade_b_plus / total) * 100).toFixed(1),
-          B: ((row.grade_b / total) * 100).toFixed(1),
-          "B-": ((row.grade_b_minus / total) * 100).toFixed(1),
-          "C+": ((row.grade_c_plus / total) * 100).toFixed(1),
-          C: ((row.grade_c / total) * 100).toFixed(1),
-          "C-": ((row.grade_c_minus / total) * 100).toFixed(1),
-          D: ((row.grade_d / total) * 100).toFixed(1),
-          E: ((row.grade_e / total) * 100).toFixed(1),
+          "A+": row.grade_a_plus,
+          A: row.grade_a,
+          "A-": row.grade_a_minus,
+          "B+": row.grade_b_plus,
+          B: row.grade_b,
+          "B-": row.grade_b_minus,
+          "C+": row.grade_c_plus,
+          C: row.grade_c,
+          "C-": row.grade_c_minus,
+          D: row.grade_d,
+          E: row.grade_e,
         },
       };
     });

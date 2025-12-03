@@ -1,5 +1,6 @@
 import {
-  LineChart,
+  ComposedChart,
+  Bar,
   Line,
   XAxis,
   YAxis,
@@ -88,20 +89,26 @@ export default function HistoricalDistributionChart({ occurrenceId }) {
     return <div className="chart-empty">No distribution data available</div>;
   }
 
-  // Color palette for all years (with different opacity for current year)
+  // Color palette for historical years (lines)
   const lineColors = [
-    { stroke: "#e7d800", fill: "#e7d800", fillOpacity: 0.3 },
-    { stroke: "#21c244", fill: "#21c244", fillOpacity: 0.3 },
-    { stroke: "#970fd6", fill: "#970fd6", fillOpacity: 0.3 },
-    { stroke: "#f97316", fill: "#f97316", fillOpacity: 0.3 },
-    { stroke: "#06b6d4", fill: "#06b6d4", fillOpacity: 0.3 },
-    { stroke: "#2563eb", fill: "#2563eb", fillOpacity: 0.5 }, // Current year - more opaque
+    "#970fd6", // Purple
+    "#21c244", // Green
+    "#f97316", // Orange
+    "#e7d800", // Yellow
+    "#06b6d4", // Cyan
   ];
+
+  // Current year color (bar) - blue
+  const currentYearColor = "#2563eb";
+
+  // Separate current year from historical years
+  const currentYear = years[years.length - 1];
+  const historicalYears = years.slice(0, -1);
 
   return (
     <div className="chart-container">
       <ResponsiveContainer width="100%" height={400}>
-        <LineChart
+        <ComposedChart
           data={chartData}
           margin={{
             top: 20,
@@ -114,32 +121,37 @@ export default function HistoricalDistributionChart({ occurrenceId }) {
           <XAxis dataKey="grade" />
           <YAxis
             label={{
-              value: "Student number",
+              value: "Number of Students",
               angle: -90,
               position: "insideLeft",
             }}
           />
-          <Tooltip formatter={(value) => `${value}`} />
+          <Tooltip />
           <Legend />
 
-          {/* All years as line charts */}
-          {years.map((year, index) => {
-            const isCurrentYear = index === years.length - 1;
-            const colors = lineColors[index % lineColors.length];
-            return (
-              <Line
-                key={year}
-                type="monotone"
-                dataKey={year}
-                stroke={colors.stroke}
-                fill={colors.fill}
-                fillOpacity={isCurrentYear ? 0.5 : 0.3}
-                strokeWidth={isCurrentYear ? 3 : 2}
-                name={year}
-              />
-            );
-          })}
-        </LineChart>
+          {/* Historical years as lines */}
+          {historicalYears.map((year, index) => (
+            <Line
+              key={year}
+              type="monotone"
+              dataKey={year}
+              stroke={lineColors[index % lineColors.length]}
+              strokeWidth={2}
+              name={year}
+              dot={{ r: 4 }}
+              zIndex={1}
+            />
+          ))}
+
+          {/* Current year as bars */}
+          <Bar
+            dataKey={currentYear}
+            fill={currentYearColor}
+            name={`${currentYear} (Current)`}
+            barSize={30}
+            zIndex={10}
+          />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

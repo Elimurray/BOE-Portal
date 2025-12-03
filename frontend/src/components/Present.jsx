@@ -94,9 +94,7 @@ export default function Present() {
     }
 
     if (filters.year !== "all") {
-      filtered = filtered.filter(
-        (occ) => occ.year.toString() === filters.year
-      );
+      filtered = filtered.filter((occ) => occ.year.toString() === filters.year);
     }
 
     if (filters.location !== "all") {
@@ -174,7 +172,11 @@ export default function Present() {
       <div className="present-page">
         <div className="no-data">
           <h2>No occurrences match the selected filters</h2>
-          <button onClick={() => setFilters({ trimester: "all", year: "all", location: "all" })}>
+          <button
+            onClick={() =>
+              setFilters({ trimester: "all", year: "all", location: "all" })
+            }
+          >
             Clear Filters
           </button>
           <button onClick={() => navigate("/review")}>Back to Review</button>
@@ -293,19 +295,22 @@ export default function Present() {
 
         {/* Graphs section */}
         <div className="graphs-container">
-          <div className="graph-section">
+          {/* <div className="graph-section">
             <h3>Grade Distribution</h3>
             <GradeDistributionChart occurrenceId={current.occurrence_id} />
-          </div>
+          </div> */}
 
-          <div className="graph-section">
-            <h3>Historical Statistics</h3>
-            <HistoricalStatsTable paperCode={current.paper_code} />
-          </div>
-
-          <div className="graph-section full-width">
+          <div className="graph-section left">
             <h3>Historical Distribution Comparison</h3>
             <HistoricalDistributionChart occurrenceId={current.occurrence_id} />
+          </div>
+
+          <div className="graph-section right">
+            <h3>Historical Statistics</h3>
+            <HistoricalStatsTable
+              paperCode={current.paper_code}
+              location={current.location}
+            />
           </div>
         </div>
       </div>
@@ -346,7 +351,8 @@ export default function Present() {
 
       {/* Keyboard shortcuts hint */}
       <div className="keyboard-hint">
-        Use ← → or Space to navigate • F for fullscreen • H to hide filters • ESC to exit
+        Use ← → or Space to navigate • F for fullscreen • H to hide filters •
+        ESC to exit
       </div>
     </div>
   );

@@ -270,7 +270,10 @@ export default function ReviewCourse() {
             <div className="graph-card">
               <h3>Historical Statistics</h3>
               <p className="graph-description">Comparing with previous years</p>
-              <HistoricalStatsTable paperCode={selectedOccurrence.paper_code} />
+              <HistoricalStatsTable
+                paperCode={selectedOccurrence.paper_code}
+                location={selectedOccurrence.location}
+              />
             </div>
           </div>
           <div className="graph-card">

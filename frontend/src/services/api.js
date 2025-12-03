@@ -35,8 +35,9 @@ export const getOccurrenceReview = (id) => api.get(`/review/occurrences/${id}`);
 export const getGradeDistribution = (occurrenceId) =>
   api.get(`/graphs/${occurrenceId}/distribution`);
 
-export const getHistoricalComparison = (paperCode) =>
-  api.get(`/graphs/historical/${paperCode}`);
+export const getHistoricalComparison = async (paperCode, location) => {
+  return await api.get(`/graphs/historical/${paperCode}?location=${location}`);
+};
 
 export const getHistoricalDistribution = (occurrenceId) => {
   return api.get(`/graphs/historical-distribution/${occurrenceId}`);

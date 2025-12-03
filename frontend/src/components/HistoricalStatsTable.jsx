@@ -2,20 +2,20 @@ import { useEffect, useState } from "react";
 import { getHistoricalComparison } from "../services/api";
 import "./HistoricalStatsTable.css";
 
-export default function HistoricalStatsTable({ paperCode }) {
+export default function HistoricalStatsTable({ paperCode, location }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!paperCode) return;
+    if (!paperCode || !location) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await getHistoricalComparison(paperCode);
+        const response = await getHistoricalComparison(paperCode, location);
 
         if (!response.data.labels || response.data.labels.length === 0) {
           setData([]);
@@ -40,7 +40,7 @@ export default function HistoricalStatsTable({ paperCode }) {
     };
 
     fetchData();
-  }, [paperCode]);
+  }, [paperCode, location]);
 
   if (loading) {
     return <div className="table-loading">Loading historical data...</div>;
