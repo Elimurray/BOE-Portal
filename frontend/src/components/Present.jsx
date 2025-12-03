@@ -302,7 +302,10 @@ export default function Present() {
 
           <div className="graph-section left">
             <h3>Historical Distribution Comparison</h3>
-            <HistoricalDistributionChart occurrenceId={current.occurrence_id} />
+            <HistoricalDistributionChart
+              occurrenceId={current.occurrence_id}
+              isFullscreen={isFullscreen}
+            />
           </div>
 
           <div className="graph-section right">

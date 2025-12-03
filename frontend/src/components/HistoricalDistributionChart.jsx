@@ -13,7 +13,10 @@ import { useEffect, useState } from "react";
 import { getHistoricalDistribution } from "../services/api";
 import "./HistoricalDistributionChart.css";
 
-export default function HistoricalDistributionChart({ occurrenceId }) {
+export default function HistoricalDistributionChart({
+  occurrenceId,
+  isFullscreen,
+}) {
   const [chartData, setChartData] = useState([]);
   const [years, setYears] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,9 +108,12 @@ export default function HistoricalDistributionChart({ occurrenceId }) {
   const currentYear = years[years.length - 1];
   const historicalYears = years.slice(0, -1);
 
+  // Dynamic height based on fullscreen state
+  const chartHeight = isFullscreen ? 550 : 400;
+
   return (
     <div className="chart-container">
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={chartHeight}>
         <ComposedChart
           data={chartData}
           margin={{

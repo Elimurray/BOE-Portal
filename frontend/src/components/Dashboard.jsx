@@ -24,7 +24,7 @@ export default function Dashboard() {
           <span className="card-arrow">→</span>
         </Link>
 
-        <Link to="/Review" className="dashboard-card">
+        <Link to="/review" className="dashboard-card">
           <h2>Review Papers</h2>
           <p>
             Review paper occurrences through historical data and dynamic data
@@ -33,7 +33,7 @@ export default function Dashboard() {
           <span className="card-arrow">→</span>
         </Link>
 
-        <Link to="/Present" className="dashboard-card">
+        <Link to="/present" className="dashboard-card">
           <h2>Present Graphs</h2>
           <p>Create powerpoint of occurrences to present at the BOE meeting</p>
           <span className="card-arrow">→</span>

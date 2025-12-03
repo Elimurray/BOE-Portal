@@ -1,8 +1,9 @@
+import { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Link,
+  useLocation,
   NavLink,
 } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
@@ -16,11 +17,33 @@ import Logo from "./assets/Uni-of-Waikato-banner.png";
 import Crest from "./assets/crest.svg";
 import "./App.css";
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // Only hide navbar on present page when fullscreen
+  const shouldShowNavbar = !(location.pathname === "/present" && isFullscreen);
+
+  // Add fullscreen class to main-content when on present page and fullscreen
+  const mainContentClass =
+    location.pathname === "/present" && isFullscreen
+      ? "main-content fullscreen-present"
+      : "main-content";
+
   return (
-    <Router>
-      <div className="app">
-        {/* Navigation */}
+    <div className="app">
+      {/* Navigation - hidden only on present page in fullscreen */}
+      {shouldShowNavbar && (
         <nav className="navbar">
           <div className="navbar-container">
             <div className="banner">
@@ -39,20 +62,28 @@ function App() {
             </div>
           </div>
         </nav>
+      )}
 
-        {/* Routes */}
-        <div className="main-content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/upload" element={<CSVUpload />} />
-            <Route path="/form" element={<CourseForm />} />
-            <Route path="/form/:occurrenceId" element={<CourseFormFill />} />
-            <Route path="/review" element={<Review />} />
-            <Route path="/review/:occurrenceId" element={<ReviewCourse />} />
-            <Route path="/present" element={<Present />} />
-          </Routes>
-        </div>
+      {/* Routes */}
+      <div className={mainContentClass}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/upload" element={<CSVUpload />} />
+          <Route path="/form" element={<CourseForm />} />
+          <Route path="/form/:occurrenceId" element={<CourseFormFill />} />
+          <Route path="/review" element={<Review />} />
+          <Route path="/review/:occurrenceId" element={<ReviewCourse />} />
+          <Route path="/present" element={<Present />} />
+        </Routes>
       </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
