@@ -193,7 +193,7 @@ export default function Present() {
     <div className={`present-page ${isFullscreen ? "fullscreen" : ""}`}>
       {/* Header with navigation and filters */}
       <div className="present-header">
-        <button className="exit-button" onClick={() => navigate("/review")}>
+        <button className="exit-button" onClick={() => navigate("/")}>
           Exit Presentation
         </button>
 
