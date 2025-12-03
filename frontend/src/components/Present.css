@@ -15,8 +15,13 @@
 /* Fullscreen mode adjustments */
 .present-page.fullscreen {
   padding: 10px;
-  height: 20vh;
+  min-height: 92vh;
   overflow: hidden;
+}
+
+.present-page.fullscreen ~ * .navbar,
+body:has(.present-page.fullscreen) .navbar {
+  display: none;
 }
 
 .present-page.fullscreen .present-header {
@@ -349,5 +354,4 @@
 
 .no-data button:hover {
   background: #e5e7eb;
-
 }

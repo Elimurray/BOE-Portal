@@ -75,8 +75,9 @@ router.get("/:occurrenceId/distribution", async (req, res) => {
 router.get("/historical/:paperCode", async (req, res) => {
   try {
     const { paperCode } = req.params;
+    const { location } = req.query; // Add location from query params
 
-    // Get historical data for this paper code across all years/trimesters
+    // Get historical data for this paper code across all years/trimesters at the same location
     const historicalResult = await db.query(
       `
       SELECT 
@@ -96,10 +97,11 @@ router.get("/historical/:paperCode", async (req, res) => {
       JOIN papers p ON o.paper_id = p.paper_id
       LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
       WHERE p.paper_code = $1
+        AND o.location = $2
         AND gd.distribution_id IS NOT NULL
       ORDER BY o.year ASC, o.trimester ASC
     `,
-      [paperCode]
+      [paperCode, location]
     );
 
     if (historicalResult.rows.length === 0) {
@@ -155,9 +157,9 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
   try {
     const { occurrenceId } = req.params;
 
-    // First, get the paper code from the occurrence
+    // First, get the paper code AND location from the occurrence
     const occurrenceResult = await db.query(
-      `SELECT p.paper_code 
+      `SELECT p.paper_code, o.location
        FROM occurrences o
        JOIN papers p ON o.paper_id = p.paper_id
        WHERE o.occurrence_id = $1`,
@@ -169,8 +171,9 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
     }
 
     const paperCode = occurrenceResult.rows[0].paper_code;
+    const location = occurrenceResult.rows[0].location;
 
-    // Now get all historical distributions for this paper code
+    // Now get all historical distributions for this paper code at the same location
     const result = await db.query(
       `
       SELECT 
@@ -189,10 +192,11 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
       JOIN papers p ON o.paper_id = p.paper_id
       LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
       WHERE p.paper_code = $1
+        AND o.location = $2
         AND gd.distribution_id IS NOT NULL
       ORDER BY o.year ASC, o.trimester ASC
       `,
-      [paperCode]
+      [paperCode, location]
     );
 
     if (result.rows.length === 0) {
@@ -224,6 +228,7 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
     res.json({
       data: distributions,
       paperCode: paperCode,
+      location: location,
     });
   } catch (error) {
     console.error("Error generating historical distribution:", error);
