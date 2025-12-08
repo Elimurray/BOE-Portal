@@ -61,7 +61,7 @@ export default function HistoricalStatsTable({ paperCode, location }) {
           <tr>
             <th>Year/Trimester</th>
             <th>Students</th>
-            <th>Average Grade</th>
+            <th>Pass / Fail</th>
             <th>Pass Rate</th>
           </tr>
         </thead>
@@ -70,7 +70,7 @@ export default function HistoricalStatsTable({ paperCode, location }) {
             <tr key={index} className={index === 0 ? "current-year" : ""}>
               <td>{row.year}</td>
               <td>{row.students}</td>
-              <td>{row.avgGrade.toFixed(2)}%</td>
+              <td>{row.avgGrade}</td>
               <td>{row.passRate.toFixed(2)}%</td>
             </tr>
           ))}

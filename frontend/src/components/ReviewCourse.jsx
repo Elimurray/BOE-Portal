@@ -391,6 +391,7 @@ export default function ReviewCourse() {
               <h3>Historical Statistics</h3>
               <p className="graph-description">Comparing with previous years</p>
               <HistoricalStatsTable
+                key={`stats-${selectedOccurrence.occurrence_id}-${refreshKey}`}
                 paperCode={selectedOccurrence.paper_code}
                 location={selectedOccurrence.location}
               />

@@ -82,27 +82,27 @@ router.get("/historical/:paperCode", async (req, res) => {
     // Get historical data for this paper code across all years/trimesters at the same location
     const historicalResult = await db.query(
       `
-      SELECT 
-        o.year,
-        o.trimester,
-        o.location,
-        gd.total_students as student_count,
-        gd.pass_rate,
-        ROUND(
-          (gd.grade_a_plus * 95 + gd.grade_a * 87.5 + gd.grade_a_minus * 82.5 +
-           gd.grade_b_plus * 77.5 + gd.grade_b * 72.5 + gd.grade_b_minus * 67.5 +
-           gd.grade_c_plus * 62.5 + gd.grade_c * 57.5 + gd.grade_c_minus * 52.5 +
-           gd.grade_d * 45 + gd.grade_e * 30)::numeric / 
-           NULLIF(gd.total_students, 0)::numeric, 2
-        ) as avg_grade
-      FROM occurrences o
-      JOIN papers p ON o.paper_id = p.paper_id
-      LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
-      WHERE p.paper_code = $1
-        AND o.location = $2
-        AND gd.distribution_id IS NOT NULL
-      ORDER BY o.year ASC, o.trimester ASC
-    `,
+  SELECT 
+    o.year,
+    o.trimester,
+    o.location,
+    gd.total_students as student_count,
+    gd.pass_rate,
+    CONCAT(
+      (gd.grade_a_plus + gd.grade_a + gd.grade_a_minus +
+       gd.grade_b_plus + gd.grade_b + gd.grade_b_minus +
+       gd.grade_c_plus + gd.grade_c + gd.grade_c_minus+ gd.grade_rp), 
+      ' / ', 
+      (gd.grade_d + gd.grade_e)
+    ) as pass_fail
+  FROM occurrences o
+  JOIN papers p ON o.paper_id = p.paper_id
+  LEFT JOIN grade_distributions gd ON o.occurrence_id = gd.occurrence_id
+  WHERE p.paper_code = $1
+    AND o.location = $2
+    AND gd.distribution_id IS NOT NULL
+  ORDER BY o.year ASC, o.trimester ASC
+  `,
       [paperCode, location]
     );
 
@@ -118,8 +118,8 @@ router.get("/historical/:paperCode", async (req, res) => {
     const labels = historicalResult.rows.map(
       (row) => `${row.year} ${row.trimester}`
     );
-    const avgGrades = historicalResult.rows.map(
-      (row) => parseFloat(row.avg_grade) || 0
+    const passFailCounts = historicalResult.rows.map(
+      (row) => row.pass_fail || "N/A"
     );
     const passRates = historicalResult.rows.map(
       (row) => parseFloat(row.pass_rate) || 0
@@ -132,9 +132,9 @@ router.get("/historical/:paperCode", async (req, res) => {
       labels: labels,
       datasets: [
         {
-          label: "Average Grade",
-          data: avgGrades,
-          type: "line",
+          label: "Pass / Fail",
+          data: passFailCounts,
+          type: "text",
         },
         {
           label: "Pass Rate (%)",
