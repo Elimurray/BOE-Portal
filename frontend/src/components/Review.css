@@ -182,7 +182,44 @@
 /* Outline Information */
 .outline-info p {
   margin: 0.75rem 0;
-  color: #333;
+  color: black;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+
+.info-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-label {
+  font-weight: 600;
+  width: 200px;
+  vertical-align: top;
+  color: black;
+}
+
+.info-value {
+  color: black;
+}
+
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.form-card h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  color: black;
+}
+
+.form-card h4:first-of-type {
+  margin-top: 0;
 }
 
 /* Graphs Section */

@@ -189,51 +189,55 @@ export default function ReviewCourse() {
           {selectedOccurrence.outline_data && (
             <div className="outline-card">
               <h3>Paper Outline</h3>
-              <div className="outline-info">
-                <p>
-                  <strong>Convenor(s):</strong>{" "}
-                  {selectedOccurrence.outline_data?.convenors?.length > 0
-                    ? selectedOccurrence.outline_data.convenors.map(
-                        (conv, index) => (
-                          <span key={index}>
-                            {conv.name}
-                            {conv.email && ` (${conv.email})`}
-                            {index <
-                              selectedOccurrence.outline_data.convenors.length -
-                                1 && ", "}
-                          </span>
-                        )
-                      )
-                    : "N/A"}
-                </p>
-                <p>
-                  <strong>Delivery Mode:</strong>{" "}
-                  {selectedOccurrence.outline_data.deliveryMode || "N/A"}
-                </p>
-                <p>
-                  <strong>Location:</strong>{" "}
-                  {selectedOccurrence.outline_data.whereTaught || "N/A"}
-                </p>
-                {selectedOccurrence.outline_data.tutors?.length > 0 && (
-                  <p>
-                    <strong>Tutors:</strong>{" "}
-                    {selectedOccurrence.outline_data.tutors.map(
-                      (tutor, index) => (
-                        <span key={index}>
-                          {typeof tutor === "string"
-                            ? tutor
-                            : `${tutor.name}${
-                                tutor.email ? ` (${tutor.email})` : ""
-                              }`}
-                          {index <
-                            selectedOccurrence.outline_data.tutors.length -
-                              1 && <br />}
-                        </span>
-                      )
-                    )}
-                  </p>
-                )}
-              </div>
+              <table className="info-table">
+                <tbody>
+                  <tr>
+                    <td className="info-label">Convenor(s)</td>
+                    <td className="info-value">
+                      {selectedOccurrence.outline_data?.convenors?.length > 0
+                        ? selectedOccurrence.outline_data.convenors.map(
+                            (conv, index) => (
+                              <div key={index}>
+                                {conv.name}
+                                {conv.email && ` (${conv.email})`}
+                              </div>
+                            )
+                          )
+                        : "N/A"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="info-label">Delivery Mode</td>
+                    <td className="info-value">
+                      {selectedOccurrence.outline_data.deliveryMode || "N/A"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="info-label">Location</td>
+                    <td className="info-value">
+                      {selectedOccurrence.outline_data.whereTaught || "N/A"}
+                    </td>
+                  </tr>
+                  {selectedOccurrence.outline_data.tutors?.length > 0 && (
+                    <tr>
+                      <td className="info-label">Tutors</td>
+                      <td className="info-value">
+                        {selectedOccurrence.outline_data.tutors.map(
+                          (tutor, index) => (
+                            <div key={index}>
+                              {typeof tutor === "string"
+                                ? tutor
+                                : `${tutor.name}${
+                                    tutor.email ? ` (${tutor.email})` : ""
+                                  }`}
+                            </div>
+                          )
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -241,60 +245,71 @@ export default function ReviewCourse() {
           {selectedOccurrence.form_status && (
             <div className="form-card">
               <h3>Course Form Details</h3>
-              <div className="form-info">
-                <div className="form-section">
-                  <h4>Staff Information</h4>
-                  <p>
-                    <strong>Lecturers:</strong>{" "}
-                    {selectedOccurrence.lecturers || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Tutors:</strong>{" "}
-                    {selectedOccurrence.tutors || "N/A"}
-                  </p>
-                </div>
 
-                <div className="form-section">
-                  <h4>Assessment Structure</h4>
-                  <p>
-                    <strong>Number of Items:</strong>{" "}
-                    {selectedOccurrence.assessment_item_count || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Internal/External Split:</strong>{" "}
-                    {selectedOccurrence.internal_external_split || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Assessment Types:</strong>{" "}
-                    {selectedOccurrence.assessment_types_summary || "N/A"}
-                  </p>
-                </div>
+              <h4>Staff Information</h4>
+              <table className="info-table">
+                <tbody>
+                  <tr>
+                    <td className="info-label">Lecturers</td>
+                    <td className="info-value">
+                      {selectedOccurrence.lecturers || "N/A"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="info-label">Tutors</td>
+                    <td className="info-value">
+                      {selectedOccurrence.tutors || "N/A"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-                <div className="form-section">
-                  <h4>Commentary</h4>
-                  <div className="commentary-box">
-                    <h5>Major Changes:</h5>
-                    <p>
-                      {selectedOccurrence.major_changes_description ||
-                        "None reported"}
-                    </p>
-                  </div>
+              <h4>Assessment Structure</h4>
+              <table className="info-table">
+                <tbody>
+                  <tr>
+                    <td className="info-label">Number of Items</td>
+                    <td className="info-value">
+                      {selectedOccurrence.assessment_item_count || "N/A"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="info-label">Internal/External Split</td>
+                    <td className="info-value">
+                      {selectedOccurrence.internal_external_split || "N/A"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="info-label">Assessment Types</td>
+                    <td className="info-value">
+                      {selectedOccurrence.assessment_types_summary || "N/A"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-                  {selectedOccurrence.grade_distribution_different && (
-                    <div className="commentary-box">
-                      <h5>Grade Distribution Comments:</h5>
-                      <p>{selectedOccurrence.grade_distribution_comments}</p>
-                    </div>
-                  )}
-
-                  {selectedOccurrence.other_comments && (
-                    <div className="commentary-box">
-                      <h5>Other Comments:</h5>
-                      <p>{selectedOccurrence.other_comments}</p>
-                    </div>
-                  )}
-                </div>
+              <h4>Commentary</h4>
+              <div className="commentary-box">
+                <h5>Major Changes:</h5>
+                <p>
+                  {selectedOccurrence.major_changes_description ||
+                    "None reported"}
+                </p>
               </div>
+
+              {selectedOccurrence.grade_distribution_different && (
+                <div className="commentary-box">
+                  <h5>Grade Distribution Comments:</h5>
+                  <p>{selectedOccurrence.grade_distribution_comments}</p>
+                </div>
+              )}
+
+              {selectedOccurrence.other_comments && (
+                <div className="commentary-box">
+                  <h5>Other Comments:</h5>
+                  <p>{selectedOccurrence.other_comments}</p>
+                </div>
+              )}
             </div>
           )}
 
