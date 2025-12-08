@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getOccurrence, submitForm } from "../services/api";
+import {
+  getOccurrence,
+  submitForm,
+  updateGradeDistribution,
+} from "../services/api";
 import GradeDistributionChart from "./GradeDistributionChart";
 import HistoricalStatsTable from "./HistoricalStatsTable";
 import HistoricalDistributionChart from "./HistoricalDistributionChart";
@@ -11,6 +15,9 @@ export default function CourseFormFill() {
   const navigate = useNavigate();
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingGrades, setIsEditingGrades] = useState(false);
+  const [editedGrades, setEditedGrades] = useState({});
+  const [refreshKey, setRefreshKey] = useState(0);
   const [formData, setFormData] = useState({
     submittedByEmail: "",
     submittedByName: "",
@@ -37,6 +44,7 @@ export default function CourseFormFill() {
       const response = await getOccurrence(occurrenceId);
       const occurrence = response.data;
       setSelectedPaper(occurrence);
+      initializeEditedGrades(occurrence);
 
       // Prepopulate form with paper data
       setFormData((prev) => ({
@@ -58,12 +66,76 @@ export default function CourseFormFill() {
     }
   };
 
+  const initializeEditedGrades = (occurrence) => {
+    setEditedGrades({
+      a_plus: occurrence.gradeDistribution?.grade_a_plus || 0,
+      a: occurrence.gradeDistribution?.grade_a || 0,
+      a_minus: occurrence.gradeDistribution?.grade_a_minus || 0,
+      b_plus: occurrence.gradeDistribution?.grade_b_plus || 0,
+      b: occurrence.gradeDistribution?.grade_b || 0,
+      b_minus: occurrence.gradeDistribution?.grade_b_minus || 0,
+      c_plus: occurrence.gradeDistribution?.grade_c_plus || 0,
+      c: occurrence.gradeDistribution?.grade_c || 0,
+      c_minus: occurrence.gradeDistribution?.grade_c_minus || 0,
+      d: occurrence.gradeDistribution?.grade_d || 0,
+      e: occurrence.gradeDistribution?.grade_e || 0,
+      rp: occurrence.gradeDistribution?.grade_rp || 0,
+      other: occurrence.gradeDistribution?.grade_other || 0,
+    });
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const handleGradeChange = (gradeKey, value) => {
+    const numValue = parseInt(value) || 0;
+    setEditedGrades((prev) => ({
+      ...prev,
+      [gradeKey]: numValue,
+    }));
+  };
+
+  const handleSaveGrades = async () => {
+    try {
+      await updateGradeDistribution(occurrenceId, editedGrades);
+      alert("Grades updated successfully!");
+      setIsEditingGrades(false);
+      setRefreshKey((prev) => prev + 1);
+      await fetchOccurrence();
+    } catch (error) {
+      console.error("Error updating grades:", error);
+      alert("Failed to update grades. Please try again.");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    initializeEditedGrades(selectedPaper);
+    setIsEditingGrades(false);
+  };
+
+  const calculateTotal = () => {
+    return Object.values(editedGrades).reduce((sum, val) => sum + val, 0);
+  };
+
+  const gradeLabels = {
+    a_plus: "A+",
+    a: "A",
+    a_minus: "A-",
+    b_plus: "B+",
+    b: "B",
+    b_minus: "B-",
+    c_plus: "C+",
+    c: "C",
+    c_minus: "C-",
+    d: "D",
+    e: "E",
+    rp: "RP",
+    other: "Other",
   };
 
   const handleSubmit = async (e) => {
@@ -168,53 +240,108 @@ export default function CourseFormFill() {
 
             {/* Grade Statistics */}
             <section className="form-section">
-              <h4>Grade Statistics</h4>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Student Count</label>
-                  <input
-                    type="number"
-                    value={selectedPaper.gradeDistribution?.total_students || 0}
-                    readOnly
-                    className="readonly"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Pass Rate (%)</label>
-                  <input
-                    type="number"
-                    value={selectedPaper.gradeDistribution?.pass_rate || 0}
-                    readOnly
-                    className="readonly"
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Pass / Fail</label>
-                <input
-                  type="text"
-                  value={`${
-                    selectedPaper.gradeDistribution?.pass_count || 0
-                  } / ${
-                    (selectedPaper.gradeDistribution?.total_students || 0) -
-                    (selectedPaper.gradeDistribution?.pass_count || 0)
-                  }`}
-                  readOnly
-                  className="readonly"
-                />
+              <div className="statistics-header">
+                <h4>Grade Statistics</h4>
+                {!isEditingGrades ? (
+                  <button
+                    type="button"
+                    className="edit-grades-button"
+                    onClick={() => setIsEditingGrades(true)}
+                  >
+                    Edit Grades
+                  </button>
+                ) : (
+                  <div className="edit-actions">
+                    <button
+                      type="button"
+                      className="save-grades-button"
+                      onClick={handleSaveGrades}
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      className="cancel-edit-button"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="form-group">
-                <label>Number of Restricted Passes (RP) *</label>
-                <input
-                  type="number"
-                  name="rpCount"
-                  value={formData.rpCount}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                />
-              </div>
+              {!isEditingGrades ? (
+                <>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Student Count</label>
+                      <input
+                        type="number"
+                        value={
+                          selectedPaper.gradeDistribution?.total_students || 0
+                        }
+                        readOnly
+                        className="readonly"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Pass Rate (%)</label>
+                      <input
+                        type="number"
+                        value={selectedPaper.gradeDistribution?.pass_rate || 0}
+                        readOnly
+                        className="readonly"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Pass / Fail</label>
+                    <input
+                      type="text"
+                      value={`${
+                        selectedPaper.gradeDistribution?.pass_count || 0
+                      } / ${
+                        (selectedPaper.gradeDistribution?.total_students || 0) -
+                        (selectedPaper.gradeDistribution?.pass_count || 0)
+                      }`}
+                      readOnly
+                      className="readonly"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Number of Restricted Passes (RP) *</label>
+                    <input
+                      type="number"
+                      name="rpCount"
+                      value={formData.rpCount}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="grade-edit-form">
+                  <div className="grade-inputs-grid">
+                    {Object.entries(gradeLabels).map(([key, label]) => (
+                      <div key={key} className="grade-input-field">
+                        <label>{label}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editedGrades[key]}
+                          onChange={(e) =>
+                            handleGradeChange(key, e.target.value)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grade-total">
+                    Total Students: {calculateTotal()}
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Assessment Structure */}
@@ -334,15 +461,22 @@ export default function CourseFormFill() {
             {selectedPaper.year}
             {selectedPaper.trimester} for {selectedPaper.paper_code}
           </p>
-          <GradeDistributionChart occurrenceId={selectedPaper.occurrence_id} />
+          <GradeDistributionChart
+            key={`grade-${selectedPaper.occurrence_id}-${refreshKey}`}
+            occurrenceId={selectedPaper.occurrence_id}
+          />
 
           <h3>Historical Statistics</h3>
           <p className="graph-description">Comparing with previous years</p>
-          <HistoricalStatsTable paperCode={selectedPaper.paper_code} />
+          <HistoricalStatsTable
+            paperCode={selectedPaper.paper_code}
+            location={selectedPaper.location}
+          />
 
           <h3>Historical Distribution</h3>
           <p className="graph-description">Comparing with previous years</p>
           <HistoricalDistributionChart
+            key={`historical-${selectedPaper.occurrence_id}-${refreshKey}`}
             occurrenceId={selectedPaper.occurrence_id}
           />
         </div>
