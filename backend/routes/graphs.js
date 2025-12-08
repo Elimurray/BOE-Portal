@@ -34,6 +34,7 @@ router.get("/:occurrenceId/distribution", async (req, res) => {
     const labels = [
       "E",
       "D",
+      "RP",
       "C-",
       "C",
       "C+",
@@ -47,6 +48,7 @@ router.get("/:occurrenceId/distribution", async (req, res) => {
     const data = [
       gradeData.grade_e,
       gradeData.grade_d,
+      gradeData.grade_rp,
       gradeData.grade_c_minus,
       gradeData.grade_c,
       gradeData.grade_c_plus,
@@ -183,6 +185,7 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
         gd.grade_a_plus, gd.grade_a, gd.grade_a_minus,
         gd.grade_b_plus, gd.grade_b, gd.grade_b_minus,
         gd.grade_c_plus, gd.grade_c, gd.grade_c_minus,
+        gd.grade_rp,
         gd.grade_d, gd.grade_e,
         gd.total_students
       FROM occurrences o
@@ -206,17 +209,18 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
         year: `${row.year} ${row.trimester}`,
         occurrenceId: row.occurrence_id,
         data: {
-          "A+": row.grade_a_plus,
-          A: row.grade_a,
-          "A-": row.grade_a_minus,
-          "B+": row.grade_b_plus,
-          B: row.grade_b,
-          "B-": row.grade_b_minus,
-          "C+": row.grade_c_plus,
-          C: row.grade_c,
-          "C-": row.grade_c_minus,
-          D: row.grade_d,
           E: row.grade_e,
+          D: row.grade_d,
+          RP: row.grade_rp,
+          "C-": row.grade_c_minus,
+          C: row.grade_c,
+          "C+": row.grade_c_plus,
+          "B-": row.grade_b_minus,
+          B: row.grade_b,
+          "B+": row.grade_b_plus,
+          "A-": row.grade_a_minus,
+          A: row.grade_a,
+          "A+": row.grade_a_plus,
         },
       };
     });

@@ -203,4 +203,124 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
   }
 });
 
+// Update grade distribution for an occurrence
+router.put("/update/:occurrenceId", async (req, res) => {
+  try {
+    const { occurrenceId } = req.params;
+    const {
+      a_plus,
+      a,
+      a_minus,
+      b_plus,
+      b,
+      b_minus,
+      c_plus,
+      c,
+      c_minus,
+      d,
+      e,
+      rp,
+      other,
+    } = req.body;
+
+    // Validate that occurrence exists
+    const occurrenceCheck = await db.query(
+      "SELECT occurrence_id FROM occurrences WHERE occurrence_id = $1",
+      [occurrenceId]
+    );
+
+    if (occurrenceCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Occurrence not found" });
+    }
+
+    // Check if grade distribution exists
+    const existingGrades = await db.query(
+      "SELECT distribution_id FROM grade_distributions WHERE occurrence_id = $1",
+      [occurrenceId]
+    );
+
+    if (existingGrades.rows.length === 0) {
+      // Insert new grade distribution
+      await db.query(
+        `INSERT INTO grade_distributions 
+         (occurrence_id, grade_a_plus, grade_a, grade_a_minus, 
+          grade_b_plus, grade_b, grade_b_minus, 
+          grade_c_plus, grade_c, grade_c_minus, 
+          grade_d, grade_e, grade_rp, grade_other, 
+          uploaded_from_csv) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [
+          occurrenceId,
+          a_plus || 0,
+          a || 0,
+          a_minus || 0,
+          b_plus || 0,
+          b || 0,
+          b_minus || 0,
+          c_plus || 0,
+          c || 0,
+          c_minus || 0,
+          d || 0,
+          e || 0,
+          rp || 0,
+          other || 0,
+          false, // Not uploaded from CSV
+        ]
+      );
+    } else {
+      // Update existing grade distribution
+      await db.query(
+        `UPDATE grade_distributions 
+         SET grade_a_plus = $1, grade_a = $2, grade_a_minus = $3,
+             grade_b_plus = $4, grade_b = $5, grade_b_minus = $6,
+             grade_c_plus = $7, grade_c = $8, grade_c_minus = $9,
+             grade_d = $10, grade_e = $11, grade_rp = $12, grade_other = $13,
+             uploaded_from_csv = false
+         WHERE occurrence_id = $14`,
+        [
+          a_plus || 0,
+          a || 0,
+          a_minus || 0,
+          b_plus || 0,
+          b || 0,
+          b_minus || 0,
+          c_plus || 0,
+          c || 0,
+          c_minus || 0,
+          d || 0,
+          e || 0,
+          rp || 0,
+          other || 0,
+          occurrenceId,
+        ]
+      );
+    }
+
+    const totalStudents =
+      (a_plus || 0) +
+      (a || 0) +
+      (a_minus || 0) +
+      (b_plus || 0) +
+      (b || 0) +
+      (b_minus || 0) +
+      (c_plus || 0) +
+      (c || 0) +
+      (c_minus || 0) +
+      (d || 0) +
+      (e || 0) +
+      (rp || 0) +
+      (other || 0);
+
+    res.json({
+      success: true,
+      occurrenceId,
+      totalStudents,
+      message: "Grade distribution updated successfully",
+    });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

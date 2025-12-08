@@ -43,4 +43,8 @@ export const getHistoricalDistribution = (occurrenceId) => {
   return api.get(`/graphs/historical-distribution/${occurrenceId}`);
 };
 
+export const updateGradeDistribution = (occurrenceId, gradeData) => {
+  return api.put(`/grades/update/${occurrenceId}`, gradeData);
+};
+
 export default api;

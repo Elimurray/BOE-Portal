@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import "./Review.css";
-import { getOccurrences, getOccurrenceReview } from "../services/api";
+import {
+  getOccurrences,
+  getOccurrenceReview,
+  updateGradeDistribution,
+} from "../services/api";
 import GradeDistributionChart from "./GradeDistributionChart";
 import HistoricalDistributionChart from "./HistoricalDistributionChart";
 import HistoricalStatsTable from "./HistoricalStatsTable";
@@ -13,6 +17,9 @@ export default function ReviewCourse() {
   const [selectedOccurrence, setSelectedOccurrence] = useState(null);
   const [loading, setLoading] = useState(false);
   const [occurrences, setOccurrences] = useState([]);
+  const [isEditingGrades, setIsEditingGrades] = useState(false);
+  const [editedGrades, setEditedGrades] = useState({});
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchOccurrence();
@@ -24,6 +31,8 @@ export default function ReviewCourse() {
       const response = await getOccurrenceReview(occurrenceId);
       const occurrence = response.data;
       setSelectedOccurrence(occurrence);
+      // Initialize edited grades with current values
+      initializeEditedGrades(occurrence);
     } catch (error) {
       console.error("Error fetching occurrence:", error);
       alert("Failed to load occurrence");
@@ -31,6 +40,24 @@ export default function ReviewCourse() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const initializeEditedGrades = (occurrence) => {
+    setEditedGrades({
+      a_plus: occurrence.grade_a_plus || 0,
+      a: occurrence.grade_a || 0,
+      a_minus: occurrence.grade_a_minus || 0,
+      b_plus: occurrence.grade_b_plus || 0,
+      b: occurrence.grade_b || 0,
+      b_minus: occurrence.grade_b_minus || 0,
+      c_plus: occurrence.grade_c_plus || 0,
+      c: occurrence.grade_c || 0,
+      c_minus: occurrence.grade_c_minus || 0,
+      d: occurrence.grade_d || 0,
+      e: occurrence.grade_e || 0,
+      rp: occurrence.grade_rp || 0,
+      other: occurrence.grade_other || 0,
+    });
   };
 
   const handleOccurrenceSelect = async (e) => {
@@ -46,11 +73,59 @@ export default function ReviewCourse() {
       const occurrence = response.data;
       console.log(occurrence);
       setSelectedOccurrence(occurrence);
+      initializeEditedGrades(occurrence);
+      setIsEditingGrades(false);
     } catch (error) {
       console.error("Error fetching occurrence:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGradeChange = (gradeKey, value) => {
+    const numValue = parseInt(value) || 0;
+    setEditedGrades((prev) => ({
+      ...prev,
+      [gradeKey]: numValue,
+    }));
+  };
+
+  const handleSaveGrades = async () => {
+    try {
+      await updateGradeDistribution(occurrenceId, editedGrades);
+      alert("Grades updated successfully!");
+      setIsEditingGrades(false);
+      setRefreshKey((prev) => prev + 1);
+      await fetchOccurrence();
+    } catch (error) {
+      console.error("Error updating grades:", error);
+      alert("Failed to update grades. Please try again.");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    initializeEditedGrades(selectedOccurrence);
+    setIsEditingGrades(false);
+  };
+
+  const calculateTotal = () => {
+    return Object.values(editedGrades).reduce((sum, val) => sum + val, 0);
+  };
+
+  const gradeLabels = {
+    a_plus: "A+",
+    a: "A",
+    a_minus: "A-",
+    b_plus: "B+",
+    b: "B",
+    b_minus: "B-",
+    c_plus: "C+",
+    c: "C",
+    c_minus: "C-",
+    d: "D",
+    e: "E",
+    rp: "RP",
+    other: "Other",
   };
 
   return (
@@ -225,32 +300,78 @@ export default function ReviewCourse() {
             </div>
           )}
 
-          {/* Grade Statistics Card */}
+          {/* Grade Statistics Card with Edit Functionality */}
           <div className="statistics-card">
-            <h3>Grade Statistics</h3>
-            <div className="stats-grid">
-              <div className="stat-item highlight">
-                <span className="stat-label">Total Students</span>
-                <span className="stat-value">
-                  {selectedOccurrence.total_students || "N/A"}
-                </span>
-              </div>
-              <div className="stat-item highlight">
-                <span className="stat-label">Pass Rate</span>
-                <span className="stat-value">
-                  {selectedOccurrence.pass_rate
-                    ? `${selectedOccurrence.pass_rate}%`
-                    : "N/A"}
-                </span>
-              </div>
-
-              <div className="stat-item">
-                <span className="stat-label">Restricted Passes</span>
-                <span className="stat-value">
-                  {selectedOccurrence.grade_rp || 0}
-                </span>
-              </div>
+            <div className="statistics-header">
+              <h3>Grade Statistics</h3>
+              {!isEditingGrades ? (
+                <button
+                  className="edit-grades-button"
+                  onClick={() => setIsEditingGrades(true)}
+                >
+                  Edit Grades
+                </button>
+              ) : (
+                <div className="edit-actions">
+                  <button
+                    className="save-grades-button"
+                    onClick={handleSaveGrades}
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    className="cancel-edit-button"
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
+
+            {!isEditingGrades ? (
+              <div className="stats-grid">
+                <div className="stat-item highlight">
+                  <span className="stat-label">Total Students</span>
+                  <span className="stat-value">
+                    {selectedOccurrence.total_students || "N/A"}
+                  </span>
+                </div>
+                <div className="stat-item highlight">
+                  <span className="stat-label">Pass Rate</span>
+                  <span className="stat-value">
+                    {selectedOccurrence.pass_rate
+                      ? `${selectedOccurrence.pass_rate}%`
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Restricted Passes</span>
+                  <span className="stat-value">
+                    {selectedOccurrence.grade_rp || 0}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="grade-edit-form">
+                <div className="grade-inputs-grid">
+                  {Object.entries(gradeLabels).map(([key, label]) => (
+                    <div key={key} className="grade-input-field">
+                      <label>{label}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editedGrades[key]}
+                        onChange={(e) => handleGradeChange(key, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="grade-total">
+                  Total Students: {calculateTotal()}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Graphs Section */}
@@ -263,6 +384,7 @@ export default function ReviewCourse() {
                 {selectedOccurrence.paper_code}
               </p>
               <GradeDistributionChart
+                key={`grade-${selectedOccurrence.occurrence_id}-${refreshKey}`}
                 occurrenceId={selectedOccurrence.occurrence_id}
               />
             </div>
@@ -280,6 +402,7 @@ export default function ReviewCourse() {
             <h3>Historical Distribution</h3>
             <p className="graph-description">Comparing with previous years</p>
             <HistoricalDistributionChart
+              key={`historical-${selectedOccurrence.occurrence_id}-${refreshKey}`}
               occurrenceId={selectedOccurrence.occurrence_id}
             />
           </div>

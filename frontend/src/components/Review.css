@@ -210,3 +210,121 @@
   color: #666;
   font-size: 0.9rem;
 }
+
+/* Edit section "/
+.statistics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.statistics-header h3 {
+  margin: 0;
+}
+
+/* Edit Actions Container */
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Grade Edit Buttons */
+.edit-grades-button,
+.save-grades-button,
+.cancel-edit-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.edit-grades-button {
+  background-color: #007bff;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.edit-grades-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.save-grades-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.save-grades-button:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+}
+
+.cancel-edit-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.cancel-edit-button:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Grade Edit Form */
+.grade-edit-form {
+  margin-top: 1rem;
+}
+
+/* Grade Inputs Grid */
+.grade-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Individual Grade Input Field */
+.grade-input-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.grade-input-field label {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.grade-input-field input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.grade-input-field input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.grade-input-field input:hover {
+  border-color: #999;
+}
+
+/* Grade Total Display */
+.grade-total {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-align: center;
+  border: 2px solid #dee2e6;
+  color: black;
+}

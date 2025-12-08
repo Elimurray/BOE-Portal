@@ -46,6 +46,7 @@ export default function HistoricalDistributionChart({
         const gradeLabels = [
           "E",
           "D",
+          "RP",
           "C-",
           "C",
           "C+",
