@@ -80,7 +80,6 @@ export default function CourseFormFill() {
       d: occurrence.gradeDistribution?.grade_d || 0,
       e: occurrence.gradeDistribution?.grade_e || 0,
       rp: occurrence.gradeDistribution?.grade_rp || 0,
-      other: occurrence.gradeDistribution?.grade_other || 0,
     });
   };
 
@@ -135,7 +134,6 @@ export default function CourseFormFill() {
     d: "D",
     e: "E",
     rp: "RP",
-    other: "Other",
   };
 
   const handleSubmit = async (e) => {
