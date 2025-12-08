@@ -313,6 +313,7 @@ export default function Present() {
             <HistoricalStatsTable
               paperCode={current.paper_code}
               location={current.location}
+              trimester={current.trimester}
             />
           </div>
         </div>

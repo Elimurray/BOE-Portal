@@ -2,20 +2,28 @@ import { useEffect, useState } from "react";
 import { getHistoricalComparison } from "../services/api";
 import "./HistoricalStatsTable.css";
 
-export default function HistoricalStatsTable({ paperCode, location }) {
+export default function HistoricalStatsTable({
+  paperCode,
+  location,
+  trimester,
+}) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!paperCode || !location) return;
+    if (!paperCode || !location || !trimester) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await getHistoricalComparison(paperCode, location);
+        const response = await getHistoricalComparison(
+          paperCode,
+          location,
+          trimester
+        );
 
         if (!response.data.labels || response.data.labels.length === 0) {
           setData([]);
