@@ -466,10 +466,12 @@ export default function CourseFormFill() {
 
           <h3>Historical Statistics</h3>
           <p className="graph-description">Comparing with previous years</p>
+
           <HistoricalStatsTable
             key={`stats-${selectedPaper.occurrence_id}-${refreshKey}`}
             paperCode={selectedPaper.paper_code}
             location={selectedPaper.location}
+            trimester={selectedPaper.trimester}
           />
 
           <h3>Historical Distribution</h3>

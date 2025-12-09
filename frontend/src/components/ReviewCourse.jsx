@@ -409,6 +409,7 @@ export default function ReviewCourse() {
                 key={`stats-${selectedOccurrence.occurrence_id}-${refreshKey}`}
                 paperCode={selectedOccurrence.paper_code}
                 location={selectedOccurrence.location}
+                trimester={selectedOccurrence.trimester}
               />
             </div>
           </div>
