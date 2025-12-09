@@ -138,14 +138,16 @@ export default function HistoricalDistributionChart({
 
           {/* Historical years as lines */}
           {historicalYears.map((year, index) => (
-            <Line
+            <Bar
               key={year}
-              type="monotone"
+              // type="monotone"
               dataKey={year}
-              stroke={lineColors[index % lineColors.length]}
-              strokeWidth={2}
+              fill={lineColors[index % lineColors.length]}
+              barSize={20}
+              // stroke={lineColors[index % lineColors.length]}
+              // strokeWidth={2}
               name={year}
-              dot={{ r: 4 }}
+              // dot={{ r: 4 }}
               zIndex={1}
             />
           ))}
@@ -155,7 +157,7 @@ export default function HistoricalDistributionChart({
             dataKey={currentYear}
             fill={currentYearColor}
             name={`${currentYear} (Current)`}
-            barSize={30}
+            barSize={20}
             zIndex={10}
           />
         </ComposedChart>

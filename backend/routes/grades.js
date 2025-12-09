@@ -44,14 +44,35 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
 
     // Validate required columns
     const firstRow = parsed.data[0];
-    if (!firstRow["Paper code"] || !firstRow["Paper total (Real)"]) {
-      return res.status(400).json({
-        error:
-          'Missing required columns: "Paper code" and "Paper total (Real)"',
-      });
+    let fullPaperCode;
+
+    // Try to get paper occurrence from CSV first, otherwise from filename
+    if (firstRow["Paper occurrence"]) {
+      fullPaperCode = firstRow["Paper occurrence"];
+    } else {
+      // Extract from filename: "CSMAX101-24A (HAM).csv" or "ENGEN101-25A__HAM_.csv"
+      const filenameMatch = req.file.originalname.match(
+        /^([A-Z0-9-]+)-(\d{2})([A-Z])\s*[\(_]+([A-Z]+)[\)_]*\.csv$/i
+      );
+
+      if (!filenameMatch) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({
+          error: "Cannot determine paper occurrence",
+          details:
+            "CSV must contain 'Paper occurrence' column or filename must follow pattern: COMPX101-25A (HAM).csv",
+        });
+      }
+
+      fullPaperCode = `${filenameMatch[1]}-${filenameMatch[2]}${filenameMatch[3]} (${filenameMatch[4]})`;
     }
 
-    const fullPaperCode = firstRow["Paper code"];
+    if (!firstRow["Paper total"]) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        error: 'Missing required column: "Paper total"',
+      });
+    }
 
     // Call parse set variables
     let paperCode, year, semester, location;
@@ -130,7 +151,7 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
     };
 
     for (const row of parsed.data) {
-      const paperTotal = parseFloat(row["Paper total (Real)"]);
+      const paperTotal = parseFloat(row["Paper total"]);
 
       if (paperTotal !== null && !isNaN(paperTotal)) {
         // Determine grade based on percentage
