@@ -39,19 +39,19 @@ router.post("/", async (req, res) => {
     const result = await db.query(
       `
       INSERT INTO course_forms (
-        occurrence_id, submitted_by_email, submitted_by_name,
+        occurrence_id,  submitted_by_name,
         lecturers, tutors, 
         rp_count, assessment_item_count, internal_external_split,
         assessment_types_summary, delivery_mode,
         major_changes_description, grade_distribution_different,
         grade_distribution_comments, other_comments,
         status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING form_id
     `,
       [
         occurrenceId,
-        submittedByEmail,
+        // submittedByEmail,
         submittedByName,
         lecturers,
         tutors,

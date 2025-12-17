@@ -143,6 +143,7 @@ export default function CourseFormFill() {
       const response = await submitForm({
         occurrenceId: selectedPaper.occurrence_id,
         ...formData,
+        rpCount: selectedPaper.gradeDistribution?.grade_rp || 0,
       });
 
       if (response.data.success) {
@@ -189,7 +190,7 @@ export default function CourseFormFill() {
             {/* Submitter Info */}
             <section className="form-section">
               <h4>Submitter Information</h4>
-              <div className="form-group">
+              {/* <div className="form-group">
                 <label>Email *</label>
                 <input
                   type="email"
@@ -198,7 +199,7 @@ export default function CourseFormFill() {
                   onChange={handleInputChange}
                   required
                 />
-              </div>
+              </div> */}
               <div className="form-group">
                 <label>Name *</label>
                 <input
@@ -310,11 +311,9 @@ export default function CourseFormFill() {
                     <label>Number of Restricted Passes (RP) *</label>
                     <input
                       type="number"
-                      name="rpCount"
-                      value={formData.rpCount}
-                      onChange={handleInputChange}
-                      required
-                      min="0"
+                      value={selectedPaper.gradeDistribution.grade_rp}
+                      readOnly
+                      className="readonly"
                     />
                   </div>
                 </>
