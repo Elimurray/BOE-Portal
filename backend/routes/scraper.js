@@ -18,8 +18,8 @@ router.post("/outline", async (req, res) => {
     // Use the actual API endpoint
     const url = `https://uow-func-net-currmngmt-offmngmt-aue-prod.azurewebsites.net/api/outline/view/${encodedCode}`;
 
-    console.log("Fetching outline:", url);
-    console.log("Occurrence code:", occurrenceCode);
+    // console.log("Fetching outline:", url);
+    // console.log("Occurrence code:", occurrenceCode);
 
     const response = await fetch(url, {
       timeout: 10000,
@@ -29,7 +29,7 @@ router.post("/outline", async (req, res) => {
       },
     });
 
-    console.log("Response status:", response.status);
+    // console.log("Response status:", response.status);
 
     if (!response.ok) {
       return res.json({
@@ -140,7 +140,7 @@ router.post("/outline", async (req, res) => {
       ),
     };
 
-    console.log("\nScraped data:", JSON.stringify(outlineData, null, 2));
+    // console.log("\nScraped data:", JSON.stringify(outlineData, null, 2));
 
     res.json({
       success: true,
