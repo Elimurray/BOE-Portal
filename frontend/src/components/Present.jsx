@@ -15,6 +15,11 @@ export default function Present() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
 
+  // Comparison states
+  const [compareOccurrence, setCompareOccurrence] = useState(null);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [compareSearchTerm, setCompareSearchTerm] = useState("");
+
   // Filter states
   const [filters, setFilters] = useState({
     trimester: "all",
@@ -45,6 +50,11 @@ export default function Present() {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e) => {
+      // Don't handle keyboard shortcuts when modal is open or when typing in search
+      if (showCompareModal && e.target.tagName === "INPUT") {
+        return;
+      }
+
       if (e.key === "ArrowRight" || e.key === " ") {
         e.preventDefault();
         nextOccurrence();
@@ -52,7 +62,9 @@ export default function Present() {
         e.preventDefault();
         previousOccurrence();
       } else if (e.key === "Escape") {
-        if (isFullscreen) {
+        if (showCompareModal) {
+          setShowCompareModal(false);
+        } else if (isFullscreen) {
           toggleFullscreen();
         } else {
           navigate("/review");
@@ -63,12 +75,26 @@ export default function Present() {
       } else if (e.key === "h" || e.key === "H") {
         e.preventDefault();
         setShowFilters(!showFilters);
+      } else if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        if (compareOccurrence) {
+          setCompareOccurrence(null);
+        } else {
+          setShowCompareModal(true);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [currentIndex, filteredOccurrences, isFullscreen, showFilters]);
+  }, [
+    currentIndex,
+    filteredOccurrences,
+    isFullscreen,
+    showFilters,
+    showCompareModal,
+    compareOccurrence,
+  ]);
 
   const fetchOccurrences = async () => {
     setLoading(true);
@@ -152,6 +178,30 @@ export default function Present() {
     return locations;
   };
 
+  // Helper function to format occurrence code
+  const formatOccurrenceCode = (occ) => {
+    const shortYear = occ.year.toString().slice(-2);
+    return `${occ.paper_code}-${shortYear}${occ.trimester} (${occ.location})`;
+  };
+
+  // Filter occurrences for compare search
+  const getFilteredCompareOccurrences = () => {
+    if (!compareSearchTerm) return allOccurrences;
+
+    const searchLower = compareSearchTerm.toLowerCase();
+    return allOccurrences.filter((occ) => {
+      const code = formatOccurrenceCode(occ).toLowerCase();
+      const name = occ.paper_name.toLowerCase();
+      return code.includes(searchLower) || name.includes(searchLower);
+    });
+  };
+
+  const handleCompareSelect = (occurrence) => {
+    setCompareOccurrence(occurrence);
+    setShowCompareModal(false);
+    setCompareSearchTerm("");
+  };
+
   if (loading) {
     return <div className="present-page loading">Loading...</div>;
   }
@@ -186,8 +236,7 @@ export default function Present() {
   }
 
   const current = filteredOccurrences[currentIndex];
-  const shortYear = current.year.toString().slice(-2);
-  const occurrenceCode = `${current.paper_code}-${shortYear}${current.trimester} (${current.location})`;
+  const occurrenceCode = formatOccurrenceCode(current);
 
   return (
     <div className={`present-page ${isFullscreen ? "fullscreen" : ""}`}>
@@ -198,6 +247,17 @@ export default function Present() {
         </button>
 
         <div className="header-controls">
+          <button
+            className="compare-btn"
+            onClick={() =>
+              compareOccurrence
+                ? setCompareOccurrence(null)
+                : setShowCompareModal(true)
+            }
+            title="Compare with another occurrence (C)"
+          >
+            {compareOccurrence ? "Clear Compare" : "Compare"}
+          </button>
           <button
             className="filter-toggle-btn"
             onClick={() => setShowFilters(!showFilters)}
@@ -277,45 +337,163 @@ export default function Present() {
         </div>
       )}
 
+      {/* Compare Modal */}
+      {showCompareModal && (
+        <div
+          className="compare-modal-overlay"
+          onClick={() => setShowCompareModal(false)}
+        >
+          <div className="compare-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="compare-modal-header">
+              <h3>Select Occurrence to Compare</h3>
+              <button
+                className="close-modal-btn"
+                onClick={() => setShowCompareModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <input
+              type="text"
+              className="compare-search-input"
+              placeholder="Search by code or name..."
+              value={compareSearchTerm}
+              onChange={(e) => setCompareSearchTerm(e.target.value)}
+              autoFocus
+            />
+
+            <div className="compare-occurrences-list">
+              {getFilteredCompareOccurrences().map((occ) => {
+                const isCurrent = occ.occurrence_id === current.occurrence_id;
+                return (
+                  <button
+                    key={occ.occurrence_id}
+                    className={`compare-occurrence-item ${
+                      isCurrent ? "current" : ""
+                    }`}
+                    onClick={() => handleCompareSelect(occ)}
+                    disabled={isCurrent}
+                  >
+                    <div className="occurrence-code">
+                      {formatOccurrenceCode(occ)}
+                    </div>
+                    <div className="occurrence-name">{occ.paper_name}</div>
+                    {isCurrent && (
+                      <span className="current-badge">(Current)</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <div className="present-content">
         {/* Title slide */}
-        <div className="title-slide">
-          <h1>{occurrenceCode}</h1>
-          <h2>{current.paper_name}</h2>
-          <div className="occurrence-stats">
-            <span className="stat">
-              Total Students: {current.total_students || "N/A"}
-            </span>
-            <span className="stat">
-              Pass Rate: {current.pass_rate ? `${current.pass_rate}%` : "N/A"}
-            </span>
+        <div className={`title-slide ${compareOccurrence ? "split" : ""}`}>
+          <div className="title-slide-item">
+            <h1>{occurrenceCode}</h1>
+            <h2>{current.paper_name}</h2>
+            <div className="occurrence-stats">
+              <span className="stat">
+                Total Students: {current.total_students || "N/A"}
+              </span>
+              <span className="stat">
+                Pass Rate: {current.pass_rate ? `${current.pass_rate}%` : "N/A"}
+              </span>
+            </div>
           </div>
+
+          {compareOccurrence && (
+            <div className="title-slide-item compare">
+              <h1>{formatOccurrenceCode(compareOccurrence)}</h1>
+              <h2>{compareOccurrence.paper_name}</h2>
+              <div className="occurrence-stats">
+                <span className="stat">
+                  Total Students: {compareOccurrence.total_students || "N/A"}
+                </span>
+                <span className="stat">
+                  Pass Rate:{" "}
+                  {compareOccurrence.pass_rate
+                    ? `${compareOccurrence.pass_rate}%`
+                    : "N/A"}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Graphs section */}
-        <div className="graphs-container">
-          {/* <div className="graph-section">
-            <h3>Grade Distribution</h3>
-            <GradeDistributionChart occurrenceId={current.occurrence_id} />
-          </div> */}
+        <div
+          className={`graphs-container ${
+            compareOccurrence ? "compare-mode" : ""
+          }`}
+        >
+          {!compareOccurrence ? (
+            // Original layout: Chart left, Stats right
+            <>
+              <div className="graph-section left">
+                <h3>Historical Distribution Comparison</h3>
+                <HistoricalDistributionChart
+                  occurrenceId={current.occurrence_id}
+                  isFullscreen={isFullscreen}
+                />
+              </div>
 
-          <div className="graph-section left">
-            <h3>Historical Distribution Comparison</h3>
-            <HistoricalDistributionChart
-              occurrenceId={current.occurrence_id}
-              isFullscreen={isFullscreen}
-            />
-          </div>
+              <div className="graph-section right">
+                <h3>Historical Statistics</h3>
+                <HistoricalStatsTable
+                  paperCode={current.paper_code}
+                  location={current.location}
+                  trimester={current.trimester}
+                />
+              </div>
+            </>
+          ) : (
+            // Compare mode: Two columns, each with chart on top and stats on bottom
+            <>
+              <div className="graphs-column">
+                <div className="graph-section">
+                  <h3>Historical Distribution Comparison</h3>
+                  <HistoricalDistributionChart
+                    occurrenceId={current.occurrence_id}
+                    isFullscreen={isFullscreen}
+                  />
+                </div>
 
-          <div className="graph-section right">
-            <h3>Historical Statistics</h3>
-            <HistoricalStatsTable
-              paperCode={current.paper_code}
-              location={current.location}
-              trimester={current.trimester}
-            />
-          </div>
+                <div className="graph-section">
+                  <h3>Historical Statistics</h3>
+                  <HistoricalStatsTable
+                    paperCode={current.paper_code}
+                    location={current.location}
+                    trimester={current.trimester}
+                  />
+                </div>
+              </div>
+
+              <div className="graphs-column">
+                <div className="graph-section">
+                  <h3>Historical Distribution Comparison</h3>
+                  <HistoricalDistributionChart
+                    occurrenceId={compareOccurrence.occurrence_id}
+                    isFullscreen={isFullscreen}
+                  />
+                </div>
+
+                <div className="graph-section">
+                  <h3>Historical Statistics</h3>
+                  <HistoricalStatsTable
+                    paperCode={compareOccurrence.paper_code}
+                    location={compareOccurrence.location}
+                    trimester={compareOccurrence.trimester}
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -333,15 +511,11 @@ export default function Present() {
             value={currentIndex}
             onChange={(e) => setCurrentIndex(parseInt(e.target.value))}
           >
-            {filteredOccurrences.map((occ, idx) => {
-              const year = occ.year.toString().slice(-2);
-              const code = `${occ.paper_code}-${year}${occ.trimester} (${occ.location})`;
-              return (
-                <option key={occ.occurrence_id} value={idx}>
-                  {code}
-                </option>
-              );
-            })}
+            {filteredOccurrences.map((occ, idx) => (
+              <option key={occ.occurrence_id} value={idx}>
+                {formatOccurrenceCode(occ)}
+              </option>
+            ))}
           </select>
         </div>
         <button
@@ -355,8 +529,8 @@ export default function Present() {
 
       {/* Keyboard shortcuts hint */}
       <div className="keyboard-hint">
-        Use ← → or Space to navigate • F for fullscreen • H to hide filters •
-        ESC to exit
+        Use ← → or Space to navigate • C to compare • F for fullscreen • H to
+        hide filters • ESC to exit
       </div>
     </div>
   );
