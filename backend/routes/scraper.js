@@ -95,7 +95,7 @@ router.post("/outline", async (req, res) => {
 
     // Extract tutors
     const tutors = [];
-    $('table.staff tr:has(td:contains("Tutors")) div').each((i, el) => {
+    $('table.staff tr:has(td:contains("Tutor")) div').each((i, el) => {
       const tutorText = $(el).text();
       if (tutorText.trim()) {
         const name = extractName(tutorText);

@@ -216,7 +216,7 @@ export default function CourseFormFill() {
             <section className="form-section">
               <h4>Staff Information</h4>
               <div className="form-group">
-                <label>Lecturer(s)</label>
+                <label>Lecturer(s) - e.g.(Firstname Lastname)</label>
                 <input
                   type="text"
                   name="lecturers"

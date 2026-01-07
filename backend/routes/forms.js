@@ -3,9 +3,62 @@ import db from "../db/connection.js";
 
 const router = express.Router();
 
+// Helper function to clean and format staff names
+function cleanStaffName(name) {
+  return name
+    .trim()
+    .replace(/^(DR|Dr|dr)\.?\s+/i, "") // Remove DR/Dr/dr with optional period
+    .replace(/\s+/g, " ") // Replace multiple spaces with single space
+    .trim();
+}
+
+// Helper function to process staff and create staff_occurrences
+async function processStaff(occurrenceId, staffNames, role, client) {
+  if (!staffNames || !staffNames.trim()) {
+    return;
+  }
+
+  const names = staffNames
+    .split(",")
+    .map((name) => cleanStaffName(name))
+    .filter((name) => name);
+
+  for (const name of names) {
+    // Get or create staff member
+    let staffResult = await client.query(
+      "SELECT staff_id FROM staff WHERE name = $1",
+      [name]
+    );
+
+    let staffId;
+    if (staffResult.rows.length === 0) {
+      // Create new staff member
+      const newStaff = await client.query(
+        "INSERT INTO staff (name) VALUES ($1) RETURNING staff_id",
+        [name]
+      );
+      staffId = newStaff.rows[0].staff_id;
+    } else {
+      staffId = staffResult.rows[0].staff_id;
+    }
+
+    // Insert into staff_occurrences (avoid duplicates)
+    await client.query(
+      `INSERT INTO occurrence_staff (occurrence_id, staff_id, role) 
+       VALUES ($1, $2, $3)
+       ON CONFLICT (occurrence_id, staff_id, role) DO NOTHING`,
+      [occurrenceId, staffId, role]
+    );
+  }
+}
+
 // Submit form
 router.post("/", async (req, res) => {
+  const client = await db.connect();
+
   try {
+    await client.query("BEGIN");
+
     const {
       occurrenceId,
       submittedByEmail,
@@ -23,23 +76,11 @@ router.post("/", async (req, res) => {
       otherComments,
     } = req.body;
 
-    // Get grade stats
-    // const statsResult = await db.query(
-    //   `
-    //   SELECT
-    //     COUNT(*) as student_count,
-    //     ROUND(COUNT(CASE WHEN paper_total >= 50 THEN 1 END)::numeric / COUNT(*)::numeric * 100, 2) as pass_rate
-    //   FROM grades WHERE paper_id = $1
-    // `,
-    //   [paperId]
-    // );
-
-    // const stats = statsResult.rows[0];
-
-    const result = await db.query(
+    // Insert course form
+    const result = await client.query(
       `
       INSERT INTO course_forms (
-        occurrence_id,  submitted_by_name,
+        occurrence_id, submitted_by_name,
         lecturers, tutors, 
         rp_count, assessment_item_count, internal_external_split,
         assessment_types_summary, delivery_mode,
@@ -51,12 +92,9 @@ router.post("/", async (req, res) => {
     `,
       [
         occurrenceId,
-        // submittedByEmail,
         submittedByName,
         lecturers,
         tutors,
-        // stats.student_count,
-        // stats.pass_rate,
         rpCount,
         assessmentItemCount,
         internalExternalSplit,
@@ -70,13 +108,27 @@ router.post("/", async (req, res) => {
       ]
     );
 
+    const formId = result.rows[0].form_id;
+
+    // Process lecturers
+    await processStaff(occurrenceId, lecturers, "Lecturer", client);
+
+    // Process tutors
+    await processStaff(occurrenceId, tutors, "Tutor", client);
+
+    await client.query("COMMIT");
+
     res.json({
       success: true,
-      formId: result.rows[0].form_id,
+      formId: formId,
       message: "Form submitted successfully",
     });
   } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error submitting form:", error);
     res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
   }
 });
 

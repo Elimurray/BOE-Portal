@@ -97,7 +97,7 @@ async function scrapeOutline(paperCode, year, semester, location) {
 
     // Extract tutors
     const tutors = [];
-    $('table.staff tr:has(td:contains("Tutors")) div').each((i, el) => {
+    $('table.staff tr:has(td:contains("Tutor")) div').each((i, el) => {
       const tutorText = $(el).text();
       if (tutorText.trim()) {
         const name = extractName(tutorText);
@@ -169,7 +169,7 @@ async function main() {
   const testCases = [
     // { paperCode: "COMPX374", year: "25", semester: "B", location: "HAM" },
     // { paperCode: "COMPX310", year: "25", semester: "B", location: "HAM" },
-    { paperCode: "ENGEN370", year: "25", semester: "A", location: "HAM" },
+    { paperCode: "COMPX242", year: "24", semester: "B", location: "TGA" },
   ];
 
   for (const testCase of testCases) {
