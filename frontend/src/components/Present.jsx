@@ -5,6 +5,7 @@ import { getOccurrences } from "../services/api";
 import GradeDistributionChart from "./GradeDistributionChart";
 import HistoricalDistributionChart from "./HistoricalDistributionChart";
 import HistoricalStatsTable from "./HistoricalStatsTable";
+import ComparisonDistributionChart from "./ComparisonDistributionChart";
 
 export default function Present() {
   const navigate = useNavigate();
@@ -393,33 +394,39 @@ export default function Present() {
       {/* Main content */}
       <div className="present-content">
         {/* Title slide */}
-        <div className={`title-slide ${compareOccurrence ? "split" : ""}`}>
-          <div className="title-slide-item">
-            <h1>{occurrenceCode}</h1>
-            <h2>{current.paper_name}</h2>
-            <div className="occurrence-stats">
-              <span className="stat">
-                Total Students: {current.total_students || "N/A"}
-              </span>
-              <span className="stat">
-                Pass Rate: {current.pass_rate ? `${current.pass_rate}%` : "N/A"}
-              </span>
+        <div className="title-slide">
+          {compareOccurrence ? (
+            // Comparison mode: Single title showing both papers
+            <div className="title-slide-item">
+              <h1>Grade Distribution Comparison</h1>
+              <div className="comparison-subtitle">
+                <div className="comparison-paper">
+                  <span className="paper-code">{occurrenceCode}</span>
+                  <span className="paper-name">{current.paper_name}</span>
+                </div>
+                <div className="vs-divider">vs</div>
+                <div className="comparison-paper">
+                  <span className="paper-code">
+                    {formatOccurrenceCode(compareOccurrence)}
+                  </span>
+                  <span className="paper-name">
+                    {compareOccurrence.paper_name}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-
-          {compareOccurrence && (
-            <div className="title-slide-item compare">
-              <h1>{formatOccurrenceCode(compareOccurrence)}</h1>
-              <h2>{compareOccurrence.paper_name}</h2>
+          ) : (
+            // Single view: Show current paper details
+            <div className="title-slide-item">
+              <h1>{occurrenceCode}</h1>
+              <h2>{current.paper_name}</h2>
               <div className="occurrence-stats">
                 <span className="stat">
-                  Total Students: {compareOccurrence.total_students || "N/A"}
+                  Total Students: {current.total_students || "N/A"}
                 </span>
                 <span className="stat">
                   Pass Rate:{" "}
-                  {compareOccurrence.pass_rate
-                    ? `${compareOccurrence.pass_rate}%`
-                    : "N/A"}
+                  {current.pass_rate ? `${current.pass_rate}%` : "N/A"}
                 </span>
               </div>
             </div>
@@ -432,8 +439,41 @@ export default function Present() {
             compareOccurrence ? "compare-mode" : ""
           }`}
         >
-          {!compareOccurrence ? (
-            // Original layout: Chart left, Stats right
+          {compareOccurrence ? (
+            // Compare mode: Single column with comparison chart and stats side-by-side
+            <>
+              <div className="graph-section left">
+                <h3>Direct Comparison</h3>
+                <ComparisonDistributionChart
+                  occurrence1Id={current.occurrence_id}
+                  occurrence2Id={compareOccurrence.occurrence_id}
+                  occurrence1Label={occurrenceCode}
+                  occurrence2Label={formatOccurrenceCode(compareOccurrence)}
+                  isFullscreen={isFullscreen}
+                />
+              </div>
+
+              <div className="graph-section right">
+                <h3>Statistics Comparison</h3>
+
+                <h4 className="stat-label">{occurrenceCode}</h4>
+                <HistoricalStatsTable
+                  paperCode={current.paper_code}
+                  location={current.location}
+                  trimester={current.trimester}
+                />
+                <h4 className="stat-label">
+                  {formatOccurrenceCode(compareOccurrence)}
+                </h4>
+                <HistoricalStatsTable
+                  paperCode={compareOccurrence.paper_code}
+                  location={compareOccurrence.location}
+                  trimester={compareOccurrence.trimester}
+                />
+              </div>
+            </>
+          ) : (
+            // Single view: Historical distribution and stats
             <>
               <div className="graph-section left">
                 <h3>Historical Distribution Comparison</h3>
@@ -450,47 +490,6 @@ export default function Present() {
                   location={current.location}
                   trimester={current.trimester}
                 />
-              </div>
-            </>
-          ) : (
-            // Compare mode: Two columns, each with chart on top and stats on bottom
-            <>
-              <div className="graphs-column">
-                <div className="graph-section">
-                  <h3>Historical Distribution Comparison</h3>
-                  <HistoricalDistributionChart
-                    occurrenceId={current.occurrence_id}
-                    isFullscreen={isFullscreen}
-                  />
-                </div>
-
-                <div className="graph-section">
-                  <h3>Historical Statistics</h3>
-                  <HistoricalStatsTable
-                    paperCode={current.paper_code}
-                    location={current.location}
-                    trimester={current.trimester}
-                  />
-                </div>
-              </div>
-
-              <div className="graphs-column">
-                <div className="graph-section">
-                  <h3>Historical Distribution Comparison</h3>
-                  <HistoricalDistributionChart
-                    occurrenceId={compareOccurrence.occurrence_id}
-                    isFullscreen={isFullscreen}
-                  />
-                </div>
-
-                <div className="graph-section">
-                  <h3>Historical Statistics</h3>
-                  <HistoricalStatsTable
-                    paperCode={compareOccurrence.paper_code}
-                    location={compareOccurrence.location}
-                    trimester={compareOccurrence.trimester}
-                  />
-                </div>
               </div>
             </>
           )}

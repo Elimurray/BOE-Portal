@@ -539,7 +539,53 @@ body:has(.present-page.fullscreen) .navbar {
 }
 
 .graphs-container.compare-mode .graph-section {
-  width: 100%;
   min-width: 0;
   overflow: hidden;
+}
+
+/* Comparison title styles */
+.comparison-subtitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.comparison-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.paper-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.paper-code {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: black;
+}
+
+.paper-name {
+  font-size: 1rem;
+  color: #333;
+}
+
+.vs-divider {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #999;
+  padding: 0 1rem;
+}
+
+.stat-label {
+  color: black;
 }
