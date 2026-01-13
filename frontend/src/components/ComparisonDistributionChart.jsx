@@ -148,16 +148,8 @@ export default function ComparisonDistributionChart({
         />
         <Tooltip />
         <Legend wrapperStyle={{ fontSize: isFullscreen ? 16 : 12 }} />
-        <Bar
-          dataKey={occurrence1Label}
-          fill="rgba(59, 130, 246, 0.8)"
-          stroke="rgb(59, 130, 246)"
-        />
-        <Bar
-          dataKey={occurrence2Label}
-          fill="rgba(16, 185, 129, 0.8)"
-          stroke="rgb(16, 185, 129)"
-        />
+        <Bar dataKey={occurrence1Label} fill="#970fd6" stroke="#970fd6" />
+        <Bar dataKey={occurrence2Label} fill="#2563eb" stroke="#2563eb" />
       </BarChart>
     </ResponsiveContainer>
   );

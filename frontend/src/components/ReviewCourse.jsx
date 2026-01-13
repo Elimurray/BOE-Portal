@@ -10,6 +10,7 @@ import {
 import GradeDistributionChart from "./GradeDistributionChart";
 import HistoricalDistributionChart from "./HistoricalDistributionChart";
 import HistoricalStatsTable from "./HistoricalStatsTable";
+import ComparisonDistributionChart from "./ComparisonDistributionChart";
 
 export default function ReviewCourse() {
   const navigate = useNavigate();
@@ -21,9 +22,29 @@ export default function ReviewCourse() {
   const [editedGrades, setEditedGrades] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Comparison states
+  const [compareOccurrence, setCompareOccurrence] = useState(null);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [compareSearchTerm, setCompareSearchTerm] = useState("");
+  const [allOccurrences, setAllOccurrences] = useState([]);
+
   useEffect(() => {
     fetchOccurrence();
+    fetchAllOccurrences();
   }, [occurrenceId]);
+
+  const fetchAllOccurrences = async () => {
+    try {
+      const response = await getOccurrences();
+      // Filter to only submitted occurrences
+      const submitted = response.data.filter(
+        (occ) => occ.form_status === "submitted"
+      );
+      setAllOccurrences(submitted);
+    } catch (error) {
+      console.error("Error fetching all occurrences:", error);
+    }
+  };
 
   const fetchOccurrence = async () => {
     setLoading(true);
@@ -111,6 +132,30 @@ export default function ReviewCourse() {
     return Object.values(editedGrades).reduce((sum, val) => sum + val, 0);
   };
 
+  // Helper function to format occurrence code
+  const formatOccurrenceCode = (occ) => {
+    const shortYear = occ.year.toString().slice(-2);
+    return `${occ.paper_code}-${shortYear}${occ.trimester} (${occ.location})`;
+  };
+
+  // Filter occurrences for compare search
+  const getFilteredCompareOccurrences = () => {
+    if (!compareSearchTerm) return allOccurrences;
+
+    const searchLower = compareSearchTerm.toLowerCase();
+    return allOccurrences.filter((occ) => {
+      const code = formatOccurrenceCode(occ).toLowerCase();
+      const name = occ.paper_name?.toLowerCase() || "";
+      return code.includes(searchLower) || name.includes(searchLower);
+    });
+  };
+
+  const handleCompareSelect = (occurrence) => {
+    setCompareOccurrence(occurrence);
+    setShowCompareModal(false);
+    setCompareSearchTerm("");
+  };
+
   const gradeLabels = {
     a_plus: "A+",
     a: "A",
@@ -132,6 +177,62 @@ export default function ReviewCourse() {
         ← Back to Search
       </button>
       <h2>Review Paper Occurrence</h2>
+
+      {/* Compare Modal */}
+      {showCompareModal && selectedOccurrence && (
+        <div
+          className="compare-modal-overlay"
+          onClick={() => setShowCompareModal(false)}
+        >
+          <div className="compare-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="compare-modal-header">
+              <h3>Select Occurrence to Compare</h3>
+              <button
+                className="close-modal-btn"
+                onClick={() => setShowCompareModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <input
+              type="text"
+              className="compare-search-input"
+              placeholder="Search by code or name..."
+              value={compareSearchTerm}
+              onChange={(e) => setCompareSearchTerm(e.target.value)}
+              autoFocus
+            />
+
+            <div className="compare-occurrences-list">
+              {getFilteredCompareOccurrences().map((occ) => {
+                const isCurrent =
+                  occ.occurrence_id === selectedOccurrence.occurrence_id;
+                return (
+                  <button
+                    key={occ.occurrence_id}
+                    className={`compare-occurrence-item ${
+                      isCurrent ? "current" : ""
+                    }`}
+                    onClick={() => handleCompareSelect(occ)}
+                    disabled={isCurrent}
+                  >
+                    <div className="occurrence-code">
+                      {formatOccurrenceCode(occ)}
+                    </div>
+                    <div className="occurrence-name">
+                      {occ.paper_name || "N/A"}
+                    </div>
+                    {isCurrent && (
+                      <span className="current-badge">(Current)</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       {selectedOccurrence && (
@@ -413,13 +514,51 @@ export default function ReviewCourse() {
               />
             </div>
           </div>
+
+          {/* Historical Distribution with Compare Button */}
           <div className="graph-card">
-            <h3>Historical Distribution</h3>
-            <p className="graph-description">Comparing with previous years</p>
-            <HistoricalDistributionChart
-              key={`historical-${selectedOccurrence.occurrence_id}-${refreshKey}`}
-              occurrenceId={selectedOccurrence.occurrence_id}
-            />
+            <div className="graph-card-header">
+              <div>
+                <h3>
+                  {compareOccurrence
+                    ? "Grade Distribution Comparison"
+                    : "Historical Distribution"}
+                </h3>
+                <p className="graph-description">
+                  {compareOccurrence
+                    ? `${formatOccurrenceCode(
+                        selectedOccurrence
+                      )} vs ${formatOccurrenceCode(compareOccurrence)}`
+                    : "Comparing with previous years"}
+                </p>
+              </div>
+              <button
+                className="compare-chart-btn"
+                onClick={() =>
+                  compareOccurrence
+                    ? setCompareOccurrence(null)
+                    : setShowCompareModal(true)
+                }
+              >
+                {compareOccurrence ? "Clear Compare" : "Compare"}
+              </button>
+            </div>
+
+            {compareOccurrence ? (
+              <ComparisonDistributionChart
+                key={`comparison-${selectedOccurrence.occurrence_id}-${compareOccurrence.occurrence_id}`}
+                occurrence1Id={selectedOccurrence.occurrence_id}
+                occurrence2Id={compareOccurrence.occurrence_id}
+                occurrence1Label={formatOccurrenceCode(selectedOccurrence)}
+                occurrence2Label={formatOccurrenceCode(compareOccurrence)}
+                isFullscreen={false}
+              />
+            ) : (
+              <HistoricalDistributionChart
+                key={`historical-${selectedOccurrence.occurrence_id}-${refreshKey}`}
+                occurrenceId={selectedOccurrence.occurrence_id}
+              />
+            )}
           </div>
         </div>
       )}

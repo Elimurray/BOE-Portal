@@ -365,3 +365,141 @@
   border: 2px solid #dee2e6;
   color: black;
 }
+
+/* Graph card header with compare button */
+.graph-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.compare-chart-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color, #1e40af);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.compare-chart-btn:hover {
+  background-color: var(--primary-dark, #1e3a8a);
+}
+
+/* Reuse modal styles from Present.css or add them here if not already present */
+.compare-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.compare-modal {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.compare-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.compare-modal-header h3 {
+  margin: 0;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-modal-btn:hover {
+  color: #000;
+}
+
+.compare-search-input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.compare-occurrences-list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.compare-occurrence-item {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.compare-occurrence-item:hover:not(:disabled) {
+  background: #f0f9ff;
+  border-color: var(--primary-color, #1e40af);
+}
+
+.compare-occurrence-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compare-occurrence-item.current {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.occurrence-code {
+  font-weight: 600;
+  color: var(--primary-color, #1e40af);
+  margin-bottom: 0.25rem;
+}
+
+.occurrence-name {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.current-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: #666;
+  font-size: 0.85rem;
+  font-style: italic;
+}
