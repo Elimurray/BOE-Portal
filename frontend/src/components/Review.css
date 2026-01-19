@@ -236,7 +236,21 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.graph-card-left {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 45vw;
+}
+
 .graph-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.graph-card-left h3 {
   margin: 0 0 0.5rem 0;
   color: #333;
   font-size: 1.2rem;
@@ -276,7 +290,9 @@
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 .edit-grades-button {

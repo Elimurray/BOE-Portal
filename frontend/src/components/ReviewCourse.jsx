@@ -38,7 +38,7 @@ export default function ReviewCourse() {
       const response = await getOccurrences();
       // Filter to only submitted occurrences
       const submitted = response.data.filter(
-        (occ) => occ.form_status === "submitted"
+        (occ) => occ.form_status === "submitted",
       );
       setAllOccurrences(submitted);
     } catch (error) {
@@ -302,7 +302,7 @@ export default function ReviewCourse() {
                                 {conv.name}
                                 {conv.email && ` (${conv.email})`}
                               </div>
-                            )
+                            ),
                           )
                         : "N/A"}
                     </td>
@@ -332,7 +332,7 @@ export default function ReviewCourse() {
                                     tutor.email ? ` (${tutor.email})` : ""
                                   }`}
                             </div>
-                          )
+                          ),
                         )}
                       </td>
                     </tr>
@@ -489,76 +489,110 @@ export default function ReviewCourse() {
           </div>
 
           {/* Graphs Section */}
+          {/* Distribution with compare button */}
           <div className="graphs-section">
-            <div className="graph-card">
-              <h3>Grade Distribution</h3>
-              <p className="graph-description">
-                {selectedOccurrence.year}
-                {selectedOccurrence.trimester} for{" "}
-                {selectedOccurrence.paper_code}
-              </p>
-              <GradeDistributionChart
-                key={`grade-${selectedOccurrence.occurrence_id}-${refreshKey}`}
-                occurrenceId={selectedOccurrence.occurrence_id}
-              />
+            <div className="graph-card-left">
+              <div className="graph-card-header">
+                <div>
+                  <h3>
+                    {compareOccurrence
+                      ? "Grade Distribution Comparison"
+                      : "Grade Distribution"}
+                  </h3>
+                  <p className="graph-description">
+                    {compareOccurrence
+                      ? `${formatOccurrenceCode(
+                          selectedOccurrence,
+                        )} vs ${formatOccurrenceCode(compareOccurrence)}`
+                      : `${formatOccurrenceCode(selectedOccurrence)}`}
+                  </p>
+                </div>
+                <button
+                  className="compare-chart-btn"
+                  onClick={() =>
+                    compareOccurrence
+                      ? setCompareOccurrence(null)
+                      : setShowCompareModal(true)
+                  }
+                >
+                  {compareOccurrence ? "Clear Compare" : "Compare"}
+                </button>
+              </div>
+
+              {compareOccurrence ? (
+                <ComparisonDistributionChart
+                  key={`comparison-${selectedOccurrence.occurrence_id}-${compareOccurrence.occurrence_id}`}
+                  occurrence1Id={selectedOccurrence.occurrence_id}
+                  occurrence2Id={compareOccurrence.occurrence_id}
+                  occurrence1Label={formatOccurrenceCode(selectedOccurrence)}
+                  occurrence2Label={formatOccurrenceCode(compareOccurrence)}
+                  isFullscreen={false}
+                />
+              ) : (
+                <GradeDistributionChart
+                  key={`grade-${selectedOccurrence.occurrence_id}-${refreshKey}`}
+                  occurrenceId={selectedOccurrence.occurrence_id}
+                />
+              )}
             </div>
 
             <div className="graph-card">
-              <h3>Historical Statistics</h3>
-              <p className="graph-description">Comparing with previous years</p>
-              <HistoricalStatsTable
-                key={`stats-${selectedOccurrence.occurrence_id}-${refreshKey}`}
-                paperCode={selectedOccurrence.paper_code}
-                location={selectedOccurrence.location}
-                trimester={selectedOccurrence.trimester}
-              />
+              {compareOccurrence ? (
+                // Compare mode: stats side-by-side
+                <>
+                  <div className="graph-section right">
+                    <h3>Statistics Comparison</h3>
+
+                    <h4 className="stat-label">
+                      {formatOccurrenceCode(selectedOccurrence)}
+                    </h4>
+                    <HistoricalStatsTable
+                      key={`stats-${selectedOccurrence.occurrence_id}-${refreshKey}`}
+                      paperCode={selectedOccurrence.paper_code}
+                      location={selectedOccurrence.location}
+                      trimester={selectedOccurrence.trimester}
+                    />
+                    <h4 className="stat-label">
+                      {formatOccurrenceCode(compareOccurrence)}
+                    </h4>
+                    <HistoricalStatsTable
+                      paperCode={compareOccurrence.paper_code}
+                      location={compareOccurrence.location}
+                      trimester={compareOccurrence.trimester}
+                    />
+                  </div>
+                </>
+              ) : (
+                // Single view: stats
+                <>
+                  <div className="graph-section right">
+                    <h3>Historical Statistics</h3>
+                    <HistoricalStatsTable
+                      key={`stats-${selectedOccurrence.occurrence_id}-${refreshKey}`}
+                      paperCode={selectedOccurrence.paper_code}
+                      location={selectedOccurrence.location}
+                      trimester={selectedOccurrence.trimester}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Historical Distribution with Compare Button */}
+          {/* Historical Distribution*/}
           <div className="graph-card">
             <div className="graph-card-header">
               <div>
-                <h3>
-                  {compareOccurrence
-                    ? "Grade Distribution Comparison"
-                    : "Historical Distribution"}
-                </h3>
+                <h3>Historical Distribution</h3>
                 <p className="graph-description">
-                  {compareOccurrence
-                    ? `${formatOccurrenceCode(
-                        selectedOccurrence
-                      )} vs ${formatOccurrenceCode(compareOccurrence)}`
-                    : "Comparing with previous years"}
+                  Comparing with previous years
                 </p>
               </div>
-              <button
-                className="compare-chart-btn"
-                onClick={() =>
-                  compareOccurrence
-                    ? setCompareOccurrence(null)
-                    : setShowCompareModal(true)
-                }
-              >
-                {compareOccurrence ? "Clear Compare" : "Compare"}
-              </button>
             </div>
-
-            {compareOccurrence ? (
-              <ComparisonDistributionChart
-                key={`comparison-${selectedOccurrence.occurrence_id}-${compareOccurrence.occurrence_id}`}
-                occurrence1Id={selectedOccurrence.occurrence_id}
-                occurrence2Id={compareOccurrence.occurrence_id}
-                occurrence1Label={formatOccurrenceCode(selectedOccurrence)}
-                occurrence2Label={formatOccurrenceCode(compareOccurrence)}
-                isFullscreen={false}
-              />
-            ) : (
-              <HistoricalDistributionChart
-                key={`historical-${selectedOccurrence.occurrence_id}-${refreshKey}`}
-                occurrenceId={selectedOccurrence.occurrence_id}
-              />
-            )}
+            <HistoricalDistributionChart
+              key={`historical-${selectedOccurrence.occurrence_id}-${refreshKey}`}
+              occurrenceId={selectedOccurrence.occurrence_id}
+            />
           </div>
         </div>
       )}
