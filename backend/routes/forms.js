@@ -7,8 +7,8 @@ const router = express.Router();
 function cleanStaffName(name) {
   return name
     .trim()
-    .replace(/^(DR|Dr|dr)\.?\s+/i, "") // Remove DR/Dr/dr with optional period
-    .replace(/\s+/g, " ") // Replace multiple spaces with single space
+    .replace(/^(DR|Dr|dr|APROF|Aprof|aprof)\.?\s+/i, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -27,7 +27,7 @@ async function processStaff(occurrenceId, staffNames, role, client) {
     // Get or create staff member
     let staffResult = await client.query(
       "SELECT staff_id FROM staff WHERE name = $1",
-      [name]
+      [name],
     );
 
     let staffId;
@@ -35,7 +35,7 @@ async function processStaff(occurrenceId, staffNames, role, client) {
       // Create new staff member
       const newStaff = await client.query(
         "INSERT INTO staff (name) VALUES ($1) RETURNING staff_id",
-        [name]
+        [name],
       );
       staffId = newStaff.rows[0].staff_id;
     } else {
@@ -47,7 +47,7 @@ async function processStaff(occurrenceId, staffNames, role, client) {
       `INSERT INTO occurrence_staff (occurrence_id, staff_id, role) 
        VALUES ($1, $2, $3)
        ON CONFLICT (occurrence_id, staff_id, role) DO NOTHING`,
-      [occurrenceId, staffId, role]
+      [occurrenceId, staffId, role],
     );
   }
 }
@@ -105,7 +105,7 @@ router.post("/", async (req, res) => {
         gradeDistributionComments,
         otherComments,
         "submitted",
-      ]
+      ],
     );
 
     const formId = result.rows[0].form_id;

@@ -8,12 +8,12 @@ router.get("/occurrences/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log("Fetching occurrence:", id); // Debug log
+    console.log("Fetching occurrence:", id);
 
     // Query the view
     const result = await db.query(
       "SELECT * FROM occurrence_summary WHERE occurrence_id = $1",
-      [id]
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -25,7 +25,7 @@ router.get("/occurrences/:id", async (req, res) => {
     // Safely parse JSON fields
     if (occurrence.outline_data) {
       try {
-        // If it's already an object (Postgres returns JSONB as object), leave it
+        // If it's already an object leave it
         if (typeof occurrence.outline_data === "string") {
           occurrence.outline_data = JSON.parse(occurrence.outline_data);
         }
@@ -35,10 +35,9 @@ router.get("/occurrences/:id", async (req, res) => {
       }
     }
 
-    // console.log("Returning occurrence:", occurrence); // Debug log
     res.json(occurrence);
   } catch (error) {
-    console.error("Error in /occurrences/:id:", error); // Debug log
+    console.error("Error in /occurrences/:id:", error);
     res.status(500).json({
       error: error.message,
       detail: error.detail || "No additional details",
