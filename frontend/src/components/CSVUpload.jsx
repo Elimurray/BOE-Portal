@@ -32,7 +32,7 @@ export default function CSVUpload() {
         const scrapedData = response.data.data;
         console.log(
           "Attempting to save outline for occurrence_id:",
-          paper.occurrenceId
+          paper.occurrenceId,
         );
 
         await saveOutline(paper.occurrenceId, scrapedData);
@@ -73,14 +73,14 @@ export default function CSVUpload() {
         // Handle new response format with multiple occurrences
         if (response.data.results && Array.isArray(response.data.results)) {
           console.log(
-            `Processing ${response.data.results.length} occurrences from ${file.name}`
+            `Processing ${response.data.results.length} occurrences from ${file.name}`,
           );
 
           for (const occurrence of response.data.results) {
             // Skip occurrences that failed to process
             if (occurrence.skipped) {
               console.log(
-                `Skipping failed occurrence: ${occurrence.paperCode}`
+                `Skipping failed occurrence: ${occurrence.paperCode}`,
               );
               uploadErrors.push({
                 fileName: file.name,
@@ -100,7 +100,7 @@ export default function CSVUpload() {
               occurrence.location
             ) {
               console.log(
-                `Attempting to scrape outline for ${occurrence.paperCode}`
+                `Attempting to scrape outline for ${occurrence.paperCode}`,
               );
               try {
                 scrapeResult = await handleScrapeAndSaveOutline({
@@ -112,12 +112,12 @@ export default function CSVUpload() {
                 });
                 console.log(
                   `Scrape result for ${occurrence.paperCode}:`,
-                  scrapeResult
+                  scrapeResult,
                 );
               } catch (scrapeError) {
                 console.error(
                   `Scrape failed for ${occurrence.paperCode}:`,
-                  scrapeError
+                  scrapeError,
                 );
                 // Don't let scraping errors stop the process
                 scrapeResult = { success: false, error: scrapeError.message };
@@ -130,7 +130,7 @@ export default function CSVUpload() {
                   year: occurrence.year,
                   trimester: occurrence.trimester,
                   location: occurrence.location,
-                }
+                },
               );
             }
 
@@ -260,9 +260,9 @@ export default function CSVUpload() {
                 <li key={idx}>
                   <strong>{result.paperCode}</strong>: {result.studentCount}{" "}
                   students
-                  {result.scraped && " (outline scraped)"}
+                  {/* {result.scraped && " (outline scraped)"}
                   {result.scrapeError &&
-                    ` (scrape failed: ${result.scrapeError})`}
+                    ` (scrape failed: ${result.scrapeError})`} */}
                 </li>
               ))}
             </ul>
