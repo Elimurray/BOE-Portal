@@ -50,7 +50,11 @@ router.get("/occurrences", async (req, res) => {
         LEFT JOIN course_forms cf ON o.occurrence_id = cf.occurrence_id
         ORDER BY o.occurrence_id, cf.submission_date DESC NULLS LAST
       ) AS unique_occurrences
-      ORDER BY year DESC, trimester DESC, paper_code
+      ORDER BY 
+  year DESC, 
+  trimester DESC, 
+  CAST(SUBSTRING(paper_code FROM 6 FOR 1) AS INTEGER),
+  paper_code
     `);
 
     res.json(result.rows);
@@ -107,7 +111,7 @@ router.get("/occurrences/:id", async (req, res) => {
       FROM occurrences o
       JOIN papers p ON o.paper_id = p.paper_id
       WHERE o.occurrence_id = $1`,
-      [id]
+      [id],
     );
 
     if (occurrenceResult.rows.length === 0) {
@@ -119,7 +123,7 @@ router.get("/occurrences/:id", async (req, res) => {
     // Get outline data if exists
     const outlineResult = await db.query(
       "SELECT scraped_data FROM paper_outlines WHERE occurrence_id = $1",
-      [id]
+      [id],
     );
 
     // Get grade distribution
@@ -132,7 +136,7 @@ router.get("/occurrences/:id", async (req, res) => {
         total_students, pass_count, pass_rate
       FROM grade_distributions 
       WHERE occurrence_id = $1`,
-      [id]
+      [id],
     );
 
     const gradeDistribution = gradeResult.rows[0] || null;
@@ -157,7 +161,7 @@ router.post("/occurrences/:id/outline", async (req, res) => {
     // Check if occurrence exists
     const occurrenceCheck = await db.query(
       "SELECT occurrence_id FROM occurrences WHERE occurrence_id = $1",
-      [id]
+      [id],
     );
 
     if (occurrenceCheck.rows.length === 0) {
@@ -167,7 +171,7 @@ router.post("/occurrences/:id/outline", async (req, res) => {
     // Check if outline already exists
     const existingOutline = await db.query(
       "SELECT outline_id FROM paper_outlines WHERE occurrence_id = $1",
-      [id]
+      [id],
     );
 
     if (existingOutline.rows.length > 0) {
@@ -180,7 +184,7 @@ router.post("/occurrences/:id/outline", async (req, res) => {
     // Insert new outline only if none exists
     await db.query(
       "INSERT INTO paper_outlines (occurrence_id, scraped_data, scraped_at) VALUES ($1, $2, NOW())",
-      [id, scrapedData]
+      [id, scrapedData],
     );
 
     res.json({ success: true, message: "Outline saved successfully" });

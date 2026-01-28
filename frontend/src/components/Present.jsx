@@ -103,7 +103,7 @@ export default function Present() {
       const response = await getOccurrences();
       // Filter to only occurrences with submitted forms
       const submitted = response.data.filter(
-        (occ) => occ.form_status === "submitted"
+        (occ) => occ.form_status === "submitted",
       );
       setAllOccurrences(submitted);
     } catch (error) {
@@ -130,9 +130,8 @@ export default function Present() {
 
     setFilteredOccurrences(filtered);
     // Reset to first occurrence when filters change
-    if (currentIndex >= filtered.length) {
-      setCurrentIndex(0);
-    }
+
+    setCurrentIndex(0);
   };
 
   const handleFilterChange = (filterType, value) => {
@@ -167,7 +166,7 @@ export default function Present() {
   // Get unique values for filter dropdowns
   const getUniqueYears = () => {
     const years = [...new Set(allOccurrences.map((occ) => occ.year))].sort(
-      (a, b) => b - a
+      (a, b) => b - a,
     );
     return years;
   };
