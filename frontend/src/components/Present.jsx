@@ -171,6 +171,10 @@ export default function Present() {
     return years;
   };
 
+  const getUniqueTrimesters = () => {
+    return [...new Set(allOccurrences.map((occ) => occ.trimester))].sort();
+  };
+
   const getUniqueLocations = () => {
     const locations = [
       ...new Set(allOccurrences.map((occ) => occ.location)),
@@ -285,14 +289,17 @@ export default function Present() {
           <div className="filter-group">
             <label>Trimester:</label>
             <select
+              id="filter-trimester"
+              name="trimester"
               value={filters.trimester}
               onChange={(e) => handleFilterChange("trimester", e.target.value)}
             >
-              <option value="all">All</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="X">X</option>
+              <option value="all">All Trimesters</option>
+              {getUniqueTrimesters().map((trimester) => (
+                <option key={trimester} value={trimester}>
+                  {trimester}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -369,9 +376,8 @@ export default function Present() {
                 return (
                   <button
                     key={occ.occurrence_id}
-                    className={`compare-occurrence-item ${
-                      isCurrent ? "current" : ""
-                    }`}
+                    className={`compare-occurrence-item ${isCurrent ? "current" : ""
+                      }`}
                     onClick={() => handleCompareSelect(occ)}
                     disabled={isCurrent}
                   >
@@ -434,9 +440,8 @@ export default function Present() {
 
         {/* Graphs section */}
         <div
-          className={`graphs-container ${
-            compareOccurrence ? "compare-mode" : ""
-          }`}
+          className={`graphs-container ${compareOccurrence ? "compare-mode" : ""
+            }`}
         >
           {compareOccurrence ? (
             // Compare mode: Single column with comparison chart and stats side-by-side
