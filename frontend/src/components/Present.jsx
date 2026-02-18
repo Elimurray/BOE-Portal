@@ -371,7 +371,7 @@ export default function Present() {
                       <input
                         type="checkbox"
                         checked={inQueue}
-                        onChange={() => {}}
+                        onChange={() => toggleOccurrenceInQueue(occ)}
                         onClick={(e) => e.stopPropagation()}
                       />
                       <div className="staging-item-info">
