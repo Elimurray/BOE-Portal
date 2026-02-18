@@ -8,12 +8,33 @@ export default function CSVUpload() {
   const [results, setResults] = useState([]);
   const [errors, setErrors] = useState([]);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [dragging, setDragging] = useState(false);
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
     setResults([]);
     setErrors([]);
   };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const dropped = Array.from(e.dataTransfer.files).filter((f) =>
+      f.name.endsWith(".csv"),
+    );
+    if (dropped.length > 0) {
+      setFiles(dropped);
+      setResults([]);
+      setErrors([]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = () => setDragging(false);
 
   const handleScrapeAndSaveOutline = async (paper) => {
     try {
@@ -199,7 +220,12 @@ export default function CSVUpload() {
       <h2>Upload Grade CSV</h2>
 
       <div className="upload-area">
-        <div className="upload-box">
+        <div
+          className={`upload-box${dragging ? " drag-over" : ""}`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
           <input
             id="csv-input"
             type="file"

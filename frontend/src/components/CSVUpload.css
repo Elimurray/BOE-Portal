@@ -30,6 +30,11 @@
   border-color: #2563eb;
 }
 
+.upload-box.drag-over {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+}
+
 .upload-icon {
   width: 64px;
   height: 64px;
