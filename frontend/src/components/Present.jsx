@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Present.css";
 import { getOccurrences } from "../services/api";
-import GradeDistributionChart from "./GradeDistributionChart";
 import HistoricalDistributionChart from "./HistoricalDistributionChart";
 import HistoricalStatsTable from "./HistoricalStatsTable";
 import ComparisonDistributionChart from "./ComparisonDistributionChart";
@@ -10,89 +9,73 @@ import ComparisonDistributionChart from "./ComparisonDistributionChart";
 export default function Present() {
   const navigate = useNavigate();
   const [allOccurrences, setAllOccurrences] = useState([]);
-  const [filteredOccurrences, setFilteredOccurrences] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
 
-  // Comparison states
-  const [compareOccurrence, setCompareOccurrence] = useState(null);
-  const [showCompareModal, setShowCompareModal] = useState(false);
-  const [compareSearchTerm, setCompareSearchTerm] = useState("");
-
-  // Filter states
-  const [filters, setFilters] = useState({
+  // ── Staging state ──────────────────────────────────────────────────────────
+  const [mode, setMode] = useState("staging"); // "staging" | "presenting"
+  const [stagingFilters, setStagingFilters] = useState({
     trimester: "all",
     year: "all",
     location: "all",
   });
+  const [selectedPrefixes, setSelectedPrefixes] = useState(new Set());
+  const [presentationQueue, setPresentationQueue] = useState([]);
+
+  // ── Presentation state ─────────────────────────────────────────────────────
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [compareOccurrence, setCompareOccurrence] = useState(null);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [compareSearchTerm, setCompareSearchTerm] = useState("");
 
   useEffect(() => {
     fetchOccurrences();
   }, []);
 
-  // Apply filters whenever filter state or occurrences change
   useEffect(() => {
-    applyFilters();
-  }, [filters, allOccurrences]);
-
-  // Fullscreen change listener
-  useEffect(() => {
-    const handleFullscreenChange = () => {
+    const handleFullscreenChange = () =>
       setIsFullscreen(!!document.fullscreenElement);
-    };
-
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Keyboard navigation
+  // Keyboard navigation (presenting mode only)
   useEffect(() => {
+    if (mode !== "presenting") return;
+
     const handleKeyPress = (e) => {
-      // Don't handle keyboard shortcuts when modal is open or when typing in search
-      if (showCompareModal && e.target.tagName === "INPUT") {
-        return;
-      }
+      if (showCompareModal && e.target.tagName === "INPUT") return;
+
+      const len = presentationQueue.length;
 
       if (e.key === "ArrowRight" || e.key === " ") {
         e.preventDefault();
-        nextOccurrence();
+        setCurrentIndex((i) => Math.min(len - 1, i + 1));
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        previousOccurrence();
+        setCurrentIndex((i) => Math.max(0, i - 1));
       } else if (e.key === "Escape") {
-        if (showCompareModal) {
-          setShowCompareModal(false);
-        } else if (isFullscreen) {
-          toggleFullscreen();
-        } else {
-          navigate("/review");
-        }
+        if (showCompareModal) setShowCompareModal(false);
+        else if (isFullscreen) toggleFullscreen();
+        else setMode("staging");
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
         toggleFullscreen();
-      } else if (e.key === "h" || e.key === "H") {
-        e.preventDefault();
-        setShowFilters(!showFilters);
       } else if (e.key === "c" || e.key === "C") {
         e.preventDefault();
-        if (compareOccurrence) {
-          setCompareOccurrence(null);
-        } else {
-          setShowCompareModal(true);
-        }
+        if (compareOccurrence) setCompareOccurrence(null);
+        else setShowCompareModal(true);
       }
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [
+    mode,
     currentIndex,
-    filteredOccurrences,
+    presentationQueue,
     isFullscreen,
-    showFilters,
     showCompareModal,
     compareOccurrence,
   ]);
@@ -101,11 +84,12 @@ export default function Present() {
     setLoading(true);
     try {
       const response = await getOccurrences();
-      // Filter to only occurrences with submitted forms
+      // skip this next line show all for present
       const submitted = response.data.filter(
         (occ) => occ.form_status === "submitted",
       );
-      setAllOccurrences(submitted);
+      //
+      setAllOccurrences(response.data);
     } catch (error) {
       console.error("Error fetching occurrences:", error);
     } finally {
@@ -113,85 +97,97 @@ export default function Present() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...allOccurrences];
-
-    if (filters.trimester !== "all") {
-      filtered = filtered.filter((occ) => occ.trimester === filters.trimester);
-    }
-
-    if (filters.year !== "all") {
-      filtered = filtered.filter((occ) => occ.year.toString() === filters.year);
-    }
-
-    if (filters.location !== "all") {
-      filtered = filtered.filter((occ) => occ.location === filters.location);
-    }
-
-    setFilteredOccurrences(filtered);
-    // Reset to first occurrence when filters change
-
-    setCurrentIndex(0);
-  };
-
-  const handleFilterChange = (filterType, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filterType]: value,
-    }));
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.error("Error attempting to enable fullscreen:", err);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
-  const nextOccurrence = () => {
-    if (currentIndex < filteredOccurrences.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const previousOccurrence = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  // Get unique values for filter dropdowns
-  const getUniqueYears = () => {
-    const years = [...new Set(allOccurrences.map((occ) => occ.year))].sort(
-      (a, b) => b - a,
-    );
-    return years;
-  };
-
-  const getUniqueTrimesters = () => {
-    return [...new Set(allOccurrences.map((occ) => occ.trimester))].sort();
-  };
-
-  const getUniqueLocations = () => {
-    const locations = [
-      ...new Set(allOccurrences.map((occ) => occ.location)),
-    ].sort();
-    return locations;
-  };
-
-  // Helper function to format occurrence code
   const formatOccurrenceCode = (occ) => {
     const shortYear = occ.year.toString().slice(-2);
     return `${occ.paper_code}-${shortYear}${occ.trimester} (${occ.location})`;
   };
 
-  // Filter occurrences for compare search
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement
+        .requestFullscreen()
+        .catch((err) => console.error(err));
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  // ── Shared unique-value helpers (from all submitted occurrences) ───────────
+  const getUniqueYears = () =>
+    [...new Set(allOccurrences.map((o) => o.year))].sort((a, b) => b - a);
+  const getUniqueTrimesters = () =>
+    [...new Set(allOccurrences.map((o) => o.trimester))].sort();
+  const getUniqueLocations = () =>
+    [...new Set(allOccurrences.map((o) => o.location))].sort();
+
+  // ── Staging helpers ────────────────────────────────────────────────────────
+  const getPrefixOf = (occ) => occ.paper_code.slice(0, 5).toUpperCase();
+
+  const getAvailablePrefixes = () =>
+    [...new Set(allOccurrences.map(getPrefixOf))].sort();
+
+  const getStagingFiltered = () => {
+    let f = [...allOccurrences];
+    if (stagingFilters.trimester !== "all")
+      f = f.filter((o) => o.trimester === stagingFilters.trimester);
+    if (stagingFilters.year !== "all")
+      f = f.filter((o) => o.year.toString() === stagingFilters.year);
+    if (stagingFilters.location !== "all")
+      f = f.filter((o) => o.location === stagingFilters.location);
+    return f;
+  };
+
+  const isInQueue = (occ) =>
+    presentationQueue.some((q) => q.occurrence_id === occ.occurrence_id);
+
+  const toggleOccurrenceInQueue = (occ) => {
+    if (isInQueue(occ)) {
+      setPresentationQueue((prev) =>
+        prev.filter((q) => q.occurrence_id !== occ.occurrence_id),
+      );
+    } else {
+      setPresentationQueue((prev) => [...prev, occ]);
+    }
+  };
+
+  const togglePrefix = (prefix) => {
+    const stagingFiltered = getStagingFiltered();
+    const matchingOccs = stagingFiltered.filter(
+      (occ) => getPrefixOf(occ) === prefix,
+    );
+
+    if (selectedPrefixes.has(prefix)) {
+      // Deselect: remove all matching occurrences from queue
+      const matchingIds = new Set(matchingOccs.map((o) => o.occurrence_id));
+      setPresentationQueue((prev) =>
+        prev.filter((q) => !matchingIds.has(q.occurrence_id)),
+      );
+      setSelectedPrefixes((prev) => {
+        const next = new Set(prev);
+        next.delete(prefix);
+        return next;
+      });
+    } else {
+      // Select: add matching occurrences not already in queue
+      setPresentationQueue((prev) => {
+        const existingIds = new Set(prev.map((q) => q.occurrence_id));
+        const toAdd = matchingOccs.filter(
+          (o) => !existingIds.has(o.occurrence_id),
+        );
+        return [...prev, ...toAdd];
+      });
+      setSelectedPrefixes((prev) => new Set([...prev, prefix]));
+    }
+  };
+
+  const startPresentation = () => {
+    if (presentationQueue.length === 0) return;
+    setCurrentIndex(0);
+    setMode("presenting");
+  };
+
   const getFilteredCompareOccurrences = () => {
     if (!compareSearchTerm) return allOccurrences;
-
     const searchLower = compareSearchTerm.toLowerCase();
     return allOccurrences.filter((occ) => {
       const code = formatOccurrenceCode(occ).toLowerCase();
@@ -200,15 +196,8 @@ export default function Present() {
     });
   };
 
-  const handleCompareSelect = (occurrence) => {
-    setCompareOccurrence(occurrence);
-    setShowCompareModal(false);
-    setCompareSearchTerm("");
-  };
-
-  if (loading) {
-    return <div className="present-page loading">Loading...</div>;
-  }
+  // ── Loading / empty states ─────────────────────────────────────────────────
+  if (loading) return <div className="present-page loading">Loading...</div>;
 
   if (allOccurrences.length === 0) {
     return (
@@ -221,33 +210,251 @@ export default function Present() {
     );
   }
 
-  if (filteredOccurrences.length === 0) {
+  // ══════════════════════════════════════════════════════════════════════════
+  // STAGING MODE
+  // ══════════════════════════════════════════════════════════════════════════
+  if (mode === "staging") {
+    const stagingFiltered = getStagingFiltered();
+    const availablePrefixes = getAvailablePrefixes();
+
     return (
-      <div className="present-page">
-        <div className="no-data">
-          <h2>No occurrences match the selected filters</h2>
+      <div className="staging-page">
+        {/* Header */}
+        <div className="staging-header">
+          <h2>Presentation Staging</h2>
           <button
+            className="start-presentation-btn"
+            onClick={startPresentation}
+            disabled={presentationQueue.length === 0}
+          >
+            Start Presentation ({presentationQueue.length} paper
+            {presentationQueue.length !== 1 ? "s" : ""})
+          </button>
+        </div>
+
+        {/* Standard filters */}
+        <div className="staging-filters">
+          <div className="filter-group">
+            <label>Year:</label>
+            <select
+              value={stagingFilters.year}
+              onChange={(e) =>
+                setStagingFilters((p) => ({ ...p, year: e.target.value }))
+              }
+            >
+              <option value="all">All Years</option>
+              {getUniqueYears().map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Trimester:</label>
+            <select
+              value={stagingFilters.trimester}
+              onChange={(e) =>
+                setStagingFilters((p) => ({ ...p, trimester: e.target.value }))
+              }
+            >
+              <option value="all">All Trimesters</option>
+              {getUniqueTrimesters().map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Location:</label>
+            <select
+              value={stagingFilters.location}
+              onChange={(e) =>
+                setStagingFilters((p) => ({ ...p, location: e.target.value }))
+              }
+            >
+              <option value="all">All Locations</option>
+              {getUniqueLocations().map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            className="clear-filters-btn"
             onClick={() =>
-              setFilters({ trimester: "all", year: "all", location: "all" })
+              setStagingFilters({
+                trimester: "all",
+                year: "all",
+                location: "all",
+              })
             }
           >
             Clear Filters
           </button>
-          <button onClick={() => navigate("/review")}>Back to Review</button>
+        </div>
+
+        {/* Prefix filter chips */}
+        <div className="prefix-filter-section">
+          <span className="prefix-filter-label">Subject Prefix:</span>
+          <div className="prefix-chips">
+            {availablePrefixes.map((prefix) => (
+              <button
+                key={prefix}
+                className={`prefix-chip${selectedPrefixes.has(prefix) ? " selected" : ""}`}
+                onClick={() => togglePrefix(prefix)}
+              >
+                {prefix}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Two-column body: occurrence list + queue panel */}
+        <div className="staging-body">
+          {/* Occurrence list */}
+          <div className="staging-list">
+            <div className="staging-list-header">
+              <span className="staging-count">
+                {stagingFiltered.length} occurrence
+                {stagingFiltered.length !== 1 ? "s" : ""}
+              </span>
+              <div className="staging-actions">
+                <button
+                  className="staging-action-btn"
+                  onClick={() => {
+                    const existingIds = new Set(
+                      presentationQueue.map((q) => q.occurrence_id),
+                    );
+                    const toAdd = stagingFiltered.filter(
+                      (o) => !existingIds.has(o.occurrence_id),
+                    );
+                    setPresentationQueue((prev) => [...prev, ...toAdd]);
+                  }}
+                >
+                  Select All Visible
+                </button>
+                <button
+                  className="staging-action-btn"
+                  onClick={() => {
+                    const visibleIds = new Set(
+                      stagingFiltered.map((o) => o.occurrence_id),
+                    );
+                    setPresentationQueue((prev) =>
+                      prev.filter((q) => !visibleIds.has(q.occurrence_id)),
+                    );
+                  }}
+                >
+                  Deselect All Visible
+                </button>
+              </div>
+            </div>
+
+            <div className="staging-occurrences">
+              {stagingFiltered.length === 0 ? (
+                <p className="no-results">
+                  No occurrences match the current filters
+                </p>
+              ) : (
+                stagingFiltered.map((occ) => {
+                  const prefix = getPrefixOf(occ);
+                  const highlighted = selectedPrefixes.has(prefix);
+                  const inQueue = isInQueue(occ);
+                  return (
+                    <div
+                      key={occ.occurrence_id}
+                      className={`staging-item${highlighted ? " highlighted" : ""}${inQueue ? " in-queue" : ""}`}
+                      onClick={() => toggleOccurrenceInQueue(occ)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={inQueue}
+                        onChange={() => {}}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="staging-item-info">
+                        <span className="staging-item-code">
+                          {formatOccurrenceCode(occ)}
+                        </span>
+                        <span className="staging-item-name">
+                          {occ.paper_name}
+                        </span>
+                      </div>
+                      {highlighted && (
+                        <span className="prefix-badge">{prefix}</span>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Queue panel */}
+          <div className="queue-preview">
+            <h3>Presentation Queue ({presentationQueue.length})</h3>
+            {presentationQueue.length === 0 ? (
+              <p className="queue-empty">
+                Select prefixes or check individual papers to build your queue.
+              </p>
+            ) : (
+              <div className="queue-list">
+                {presentationQueue.map((occ, idx) => (
+                  <div key={occ.occurrence_id} className="queue-item">
+                    <span className="queue-number">{idx + 1}</span>
+                    <div className="queue-item-info">
+                      <span className="queue-code">
+                        {formatOccurrenceCode(occ)}
+                      </span>
+                      <span className="queue-name">{occ.paper_name}</span>
+                    </div>
+                    <button
+                      className="queue-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleOccurrenceInQueue(occ);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {presentationQueue.length > 0 && (
+              <button
+                className="clear-queue-btn"
+                onClick={() => {
+                  setPresentationQueue([]);
+                  setSelectedPrefixes(new Set());
+                }}
+              >
+                Clear Queue
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  const current = filteredOccurrences[currentIndex];
+  // ══════════════════════════════════════════════════════════════════════════
+  // PRESENTING MODE
+  // ══════════════════════════════════════════════════════════════════════════
+  const presenting = presentationQueue;
+
+  const safeIndex = Math.min(currentIndex, presenting.length - 1);
+  const current = presenting[safeIndex];
   const occurrenceCode = formatOccurrenceCode(current);
 
   return (
     <div className={`present-page ${isFullscreen ? "fullscreen" : ""}`}>
-      {/* Header with navigation and filters */}
+      {/* Header */}
       <div className="present-header">
-        <button className="exit-button" onClick={() => navigate("/")}>
-          Exit Presentation
+        <button className="exit-button" onClick={() => setMode("staging")}>
+          ← Back to Staging
         </button>
 
         <div className="header-controls">
@@ -263,13 +470,6 @@ export default function Present() {
             {compareOccurrence ? "Clear Compare" : "Compare"}
           </button>
           <button
-            className="filter-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-            title="Toggle filters (H)"
-          >
-            {showFilters ? "Hide Filters" : "Show Filters"}
-          </button>
-          <button
             className="fullscreen-btn"
             onClick={toggleFullscreen}
             title="Toggle fullscreen (F)"
@@ -279,70 +479,9 @@ export default function Present() {
         </div>
 
         <div className="progress">
-          {currentIndex + 1} / {filteredOccurrences.length}
+          {safeIndex + 1} / {presenting.length}
         </div>
       </div>
-
-      {/* Filters bar */}
-      {showFilters && (
-        <div className="filters-bar">
-          <div className="filter-group">
-            <label>Trimester:</label>
-            <select
-              id="filter-trimester"
-              name="trimester"
-              value={filters.trimester}
-              onChange={(e) => handleFilterChange("trimester", e.target.value)}
-            >
-              <option value="all">All Trimesters</option>
-              {getUniqueTrimesters().map((trimester) => (
-                <option key={trimester} value={trimester}>
-                  {trimester}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Year:</label>
-            <select
-              value={filters.year}
-              onChange={(e) => handleFilterChange("year", e.target.value)}
-            >
-              <option value="all">All</option>
-              {getUniqueYears().map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Location:</label>
-            <select
-              value={filters.location}
-              onChange={(e) => handleFilterChange("location", e.target.value)}
-            >
-              <option value="all">All</option>
-              {getUniqueLocations().map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            className="clear-filters-btn"
-            onClick={() =>
-              setFilters({ trimester: "all", year: "all", location: "all" })
-            }
-          >
-            Clear All
-          </button>
-        </div>
-      )}
 
       {/* Compare Modal */}
       {showCompareModal && (
@@ -360,7 +499,6 @@ export default function Present() {
                 ×
               </button>
             </div>
-
             <input
               type="text"
               className="compare-search-input"
@@ -369,16 +507,18 @@ export default function Present() {
               onChange={(e) => setCompareSearchTerm(e.target.value)}
               autoFocus
             />
-
             <div className="compare-occurrences-list">
               {getFilteredCompareOccurrences().map((occ) => {
                 const isCurrent = occ.occurrence_id === current.occurrence_id;
                 return (
                   <button
                     key={occ.occurrence_id}
-                    className={`compare-occurrence-item ${isCurrent ? "current" : ""
-                      }`}
-                    onClick={() => handleCompareSelect(occ)}
+                    className={`compare-occurrence-item${isCurrent ? " current" : ""}`}
+                    onClick={() => {
+                      setCompareOccurrence(occ);
+                      setShowCompareModal(false);
+                      setCompareSearchTerm("");
+                    }}
                     disabled={isCurrent}
                   >
                     <div className="occurrence-code">
@@ -398,10 +538,8 @@ export default function Present() {
 
       {/* Main content */}
       <div className="present-content">
-        {/* Title slide */}
         <div className="title-slide">
           {compareOccurrence ? (
-            // Comparison mode: Single title showing both papers
             <div className="title-slide-item">
               <h1>Grade Distribution Comparison</h1>
               <div className="comparison-subtitle">
@@ -421,7 +559,6 @@ export default function Present() {
               </div>
             </div>
           ) : (
-            // Single view: Show current paper details
             <div className="title-slide-item">
               <h1>{occurrenceCode}</h1>
               <h2>{current.paper_name}</h2>
@@ -438,13 +575,10 @@ export default function Present() {
           )}
         </div>
 
-        {/* Graphs section */}
         <div
-          className={`graphs-container ${compareOccurrence ? "compare-mode" : ""
-            }`}
+          className={`graphs-container${compareOccurrence ? " compare-mode" : ""}`}
         >
           {compareOccurrence ? (
-            // Compare mode: Single column with comparison chart and stats side-by-side
             <>
               <div className="graph-section left">
                 <h3>Direct Comparison</h3>
@@ -456,10 +590,8 @@ export default function Present() {
                   isFullscreen={isFullscreen}
                 />
               </div>
-
               <div className="graph-section right">
                 <h3>Statistics Comparison</h3>
-
                 <h4 className="stat-label">{occurrenceCode}</h4>
                 <HistoricalStatsTable
                   paperCode={current.paper_code}
@@ -477,7 +609,6 @@ export default function Present() {
               </div>
             </>
           ) : (
-            // Single view: Historical distribution and stats
             <>
               <div className="graph-section left">
                 <h3>Historical Distribution Comparison</h3>
@@ -486,7 +617,6 @@ export default function Present() {
                   isFullscreen={isFullscreen}
                 />
               </div>
-
               <div className="graph-section right">
                 <h3>Historical Statistics</h3>
                 <HistoricalStatsTable
@@ -504,17 +634,17 @@ export default function Present() {
       <div className="present-navigation">
         <button
           className="nav-button"
-          onClick={previousOccurrence}
-          disabled={currentIndex === 0}
+          onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+          disabled={safeIndex === 0}
         >
           ← Previous
         </button>
         <div className="occurrence-selector">
           <select
-            value={currentIndex}
+            value={safeIndex}
             onChange={(e) => setCurrentIndex(parseInt(e.target.value))}
           >
-            {filteredOccurrences.map((occ, idx) => (
+            {presenting.map((occ, idx) => (
               <option key={occ.occurrence_id} value={idx}>
                 {formatOccurrenceCode(occ)}
               </option>
@@ -523,17 +653,18 @@ export default function Present() {
         </div>
         <button
           className="nav-button"
-          onClick={nextOccurrence}
-          disabled={currentIndex === filteredOccurrences.length - 1}
+          onClick={() =>
+            setCurrentIndex((i) => Math.min(presenting.length - 1, i + 1))
+          }
+          disabled={safeIndex === presenting.length - 1}
         >
           Next →
         </button>
       </div>
 
-      {/* Keyboard shortcuts hint */}
       <div className="keyboard-hint">
-        Use ← → or Space to navigate • C to compare • F for fullscreen • H to
-        hide filters • ESC to exit
+        Use ← → or Space to navigate • C to compare • F for fullscreen • ESC
+        to staging
       </div>
     </div>
   );
