@@ -44,11 +44,11 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
 
     // Validate required columns
     const firstRow = parsed.data[0];
-    if (!firstRow["Paper occurrence"] || !firstRow["Paper total"]) {
+    if (!firstRow["Paper code"] || !firstRow["Paper total (Real)"]) {
       fs.unlinkSync(req.file.path);
       return res.status(400).json({
         error:
-          'Missing required columns: "Paper occurrence" and/or "Paper total"',
+          'Missing required columns: "Paper code" and/or "Paper total (Real)"',
       });
     }
 
@@ -56,8 +56,8 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
     const occurrenceGroups = {};
 
     for (const row of parsed.data) {
-      const fullPaperCode = row["Paper occurrence"];
-      const paperTotal = parseFloat(row["Paper total"]);
+      const fullPaperCode = row["Paper code"];
+      const paperTotal = parseFloat(row["Paper total (Real)"]);
 
       if (!fullPaperCode || isNaN(paperTotal)) {
         continue; // Skip invalid rows
@@ -74,7 +74,7 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
 
     // Process each occurrence group
     for (const [fullPaperCode, paperTotals] of Object.entries(
-      occurrenceGroups
+      occurrenceGroups,
     )) {
       try {
         // Parse paper code
@@ -84,14 +84,14 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
         // First, find or create the paper definition
         let paperDefResult = await db.query(
           "SELECT paper_id FROM papers WHERE paper_code = $1",
-          [paperCode]
+          [paperCode],
         );
 
         let paperDefId;
         if (paperDefResult.rows.length === 0) {
           const insertPaperDef = await db.query(
             "INSERT INTO papers (paper_code, paper_name) VALUES ($1, $2) RETURNING paper_id",
-            [paperCode, `${paperCode} - Title`]
+            [paperCode, `${paperCode} - Title`],
           );
           paperDefId = insertPaperDef.rows[0].paper_id;
         } else {
@@ -101,14 +101,14 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
         // Find or create the occurrence
         let occurrenceResult = await db.query(
           "SELECT occurrence_id FROM occurrences WHERE paper_id = $1 AND year = $2 AND trimester = $3 AND location = $4",
-          [paperDefId, `20${year}`, semester, location]
+          [paperDefId, `20${year}`, semester, location],
         );
 
         let occurrenceId;
         if (occurrenceResult.rows.length === 0) {
           const insertOccurrence = await db.query(
             "INSERT INTO occurrences (paper_id, year, trimester, location) VALUES ($1, $2, $3, $4) RETURNING occurrence_id",
-            [paperDefId, `20${year}`, semester, location]
+            [paperDefId, `20${year}`, semester, location],
           );
           occurrenceId = insertOccurrence.rows[0].occurrence_id;
         } else {
@@ -118,7 +118,7 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
         // Delete existing grade distribution for this occurrence
         await db.query(
           "DELETE FROM grade_distributions WHERE occurrence_id = $1",
-          [occurrenceId]
+          [occurrenceId],
         );
 
         // Count grades by letter grade for this occurrence
@@ -180,7 +180,7 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
             gradeCounts.other,
             true,
             req.file.originalname,
-          ]
+          ],
         );
 
         results.push({
@@ -245,7 +245,7 @@ router.put("/update/:occurrenceId", async (req, res) => {
     // Validate that occurrence exists
     const occurrenceCheck = await db.query(
       "SELECT occurrence_id FROM occurrences WHERE occurrence_id = $1",
-      [occurrenceId]
+      [occurrenceId],
     );
 
     if (occurrenceCheck.rows.length === 0) {
@@ -255,7 +255,7 @@ router.put("/update/:occurrenceId", async (req, res) => {
     // Check if grade distribution exists
     const existingGrades = await db.query(
       "SELECT distribution_id FROM grade_distributions WHERE occurrence_id = $1",
-      [occurrenceId]
+      [occurrenceId],
     );
 
     if (existingGrades.rows.length === 0) {
@@ -284,7 +284,7 @@ router.put("/update/:occurrenceId", async (req, res) => {
           rp || 0,
           other || 0,
           false, // Not uploaded from CSV
-        ]
+        ],
       );
     } else {
       // Update existing grade distribution
@@ -311,7 +311,7 @@ router.put("/update/:occurrenceId", async (req, res) => {
           rp || 0,
           other || 0,
           occurrenceId,
-        ]
+        ],
       );
     }
 
