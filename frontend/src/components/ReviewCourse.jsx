@@ -77,6 +77,7 @@ export default function ReviewCourse() {
       d: occurrence.grade_d || 0,
       e: occurrence.grade_e || 0,
       rp: occurrence.grade_rp || 0,
+      ic: occurrence.grade_ic || 0,
     });
   };
 
@@ -169,6 +170,7 @@ export default function ReviewCourse() {
     d: "D",
     e: "E",
     rp: "RP",
+    ic: "IC",
   };
 
   return (

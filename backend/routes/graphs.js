@@ -10,14 +10,14 @@ router.get("/:occurrenceId/distribution", async (req, res) => {
 
     // Get grade distribution for this occurrence
     const result = await db.query(
-      `SELECT 
+      `SELECT
         grade_a_plus, grade_a, grade_a_minus,
         grade_b_plus, grade_b, grade_b_minus,
         grade_c_plus, grade_c, grade_c_minus,
-        grade_d, grade_e, grade_rp, grade_other
-      FROM grade_distributions 
+        grade_d, grade_e, grade_rp, grade_other, grade_ic
+      FROM grade_distributions
       WHERE occurrence_id = $1`,
-      [occurrenceId]
+      [occurrenceId],
     );
 
     if (result.rows.length === 0) {
@@ -30,8 +30,9 @@ router.get("/:occurrenceId/distribution", async (req, res) => {
 
     const gradeData = result.rows[0];
 
-    // Format data for chart (reverse order so A+ is on right)
+    // Format data for chart (reverse order so A+ is on right, IC at start as special category)
     const labels = [
+      "IC",
       "E",
       "D",
       "RP",
@@ -46,6 +47,7 @@ router.get("/:occurrenceId/distribution", async (req, res) => {
       "A+",
     ];
     const data = [
+      gradeData.grade_ic || 0,
       gradeData.grade_e,
       gradeData.grade_d,
       gradeData.grade_rp,
@@ -93,7 +95,7 @@ router.get("/historical/:paperCode", async (req, res) => {
        gd.grade_b_plus + gd.grade_b + gd.grade_b_minus +
        gd.grade_c_plus + gd.grade_c + gd.grade_c_minus+ gd.grade_rp), 
       ' / ', 
-      (gd.grade_d + gd.grade_e)
+      (gd.grade_d + gd.grade_e + gd.grade_ic)
     ) as pass_fail
   FROM occurrences o
   JOIN papers p ON o.paper_id = p.paper_id
@@ -104,7 +106,7 @@ router.get("/historical/:paperCode", async (req, res) => {
   AND gd.distribution_id IS NOT NULL
 ORDER BY o.year ASC, o.trimester ASC
   `,
-      [paperCode, location, trimester]
+      [paperCode, location, trimester],
     );
 
     if (historicalResult.rows.length === 0) {
@@ -117,16 +119,16 @@ ORDER BY o.year ASC, o.trimester ASC
 
     // Format for Chart.js/Recharts
     const labels = historicalResult.rows.map(
-      (row) => `${row.year} ${row.trimester}`
+      (row) => `${row.year} ${row.trimester}`,
     );
     const passFailCounts = historicalResult.rows.map(
-      (row) => row.pass_fail || "N/A"
+      (row) => row.pass_fail || "N/A",
     );
     const passRates = historicalResult.rows.map(
-      (row) => parseFloat(row.pass_rate) || 0
+      (row) => parseFloat(row.pass_rate) || 0,
     );
     const studentCounts = historicalResult.rows.map(
-      (row) => parseInt(row.student_count) || 0
+      (row) => parseInt(row.student_count) || 0,
     );
 
     res.json({
@@ -166,7 +168,7 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
    FROM occurrences o
    JOIN papers p ON o.paper_id = p.paper_id
    WHERE o.occurrence_id = $1`,
-      [occurrenceId]
+      [occurrenceId],
     );
 
     if (occurrenceResult.rows.length === 0) {
@@ -187,7 +189,7 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
         gd.grade_a_plus, gd.grade_a, gd.grade_a_minus,
         gd.grade_b_plus, gd.grade_b, gd.grade_b_minus,
         gd.grade_c_plus, gd.grade_c, gd.grade_c_minus,
-        gd.grade_rp,
+        gd.grade_rp, gd.grade_ic,
         gd.grade_d, gd.grade_e,
         gd.total_students
       FROM occurrences o
@@ -199,7 +201,7 @@ router.get("/historical-distribution/:occurrenceId", async (req, res) => {
   AND gd.distribution_id IS NOT NULL
 ORDER BY o.year ASC, o.trimester ASC
       `,
-      [paperCode, location, trimester]
+      [paperCode, location, trimester],
     );
 
     if (result.rows.length === 0) {
@@ -212,6 +214,7 @@ ORDER BY o.year ASC, o.trimester ASC
         year: `${row.year} ${row.trimester}`,
         occurrenceId: row.occurrence_id,
         data: {
+          IC: row.grade_ic || 0,
           E: row.grade_e,
           D: row.grade_d,
           RP: row.grade_rp,

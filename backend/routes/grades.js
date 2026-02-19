@@ -57,9 +57,13 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
 
     for (const row of parsed.data) {
       const fullPaperCode = row["Paper code"];
-      const paperTotal = parseFloat(row["Paper total (Real)"]);
+      const rawTotal = row["Paper total (Real)"];
+      const isIC =
+        typeof rawTotal === "string" &&
+        rawTotal.trim().toUpperCase() === "IC";
+      const paperTotal = isIC ? "IC" : parseFloat(rawTotal);
 
-      if (!fullPaperCode || isNaN(paperTotal)) {
+      if (!fullPaperCode || (!isIC && isNaN(paperTotal))) {
         continue; // Skip invalid rows
       }
 
@@ -136,9 +140,11 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
           e: 0,
           rp: 0,
           other: 0,
+          ic: 0,
         };
 
         for (const paperTotal of paperTotals) {
+          if (paperTotal === "IC") { gradeCounts.ic++; continue; }
           if (paperTotal >= 90) gradeCounts.a_plus++;
           else if (paperTotal >= 85) gradeCounts.a++;
           else if (paperTotal >= 80) gradeCounts.a_minus++;
@@ -156,13 +162,13 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
 
         // Insert aggregated grade distribution
         await db.query(
-          `INSERT INTO grade_distributions 
-           (occurrence_id, grade_a_plus, grade_a, grade_a_minus, 
-            grade_b_plus, grade_b, grade_b_minus, 
-            grade_c_plus, grade_c, grade_c_minus, 
-            grade_d, grade_e, grade_rp, grade_other, 
-            uploaded_from_csv, upload_filename) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+          `INSERT INTO grade_distributions
+           (occurrence_id, grade_a_plus, grade_a, grade_a_minus,
+            grade_b_plus, grade_b, grade_b_minus,
+            grade_c_plus, grade_c, grade_c_minus,
+            grade_d, grade_e, grade_rp, grade_other, grade_ic,
+            uploaded_from_csv, upload_filename)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
           [
             occurrenceId,
             gradeCounts.a_plus,
@@ -178,6 +184,7 @@ router.post("/upload", upload.single("csv"), async (req, res) => {
             gradeCounts.e,
             gradeCounts.rp,
             gradeCounts.other,
+            gradeCounts.ic,
             true,
             req.file.originalname,
           ],
@@ -240,6 +247,7 @@ router.put("/update/:occurrenceId", async (req, res) => {
       e,
       rp,
       other,
+      ic,
     } = req.body;
 
     // Validate that occurrence exists
@@ -261,13 +269,13 @@ router.put("/update/:occurrenceId", async (req, res) => {
     if (existingGrades.rows.length === 0) {
       // Insert new grade distribution
       await db.query(
-        `INSERT INTO grade_distributions 
-         (occurrence_id, grade_a_plus, grade_a, grade_a_minus, 
-          grade_b_plus, grade_b, grade_b_minus, 
-          grade_c_plus, grade_c, grade_c_minus, 
-          grade_d, grade_e, grade_rp, grade_other, 
-          uploaded_from_csv) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        `INSERT INTO grade_distributions
+         (occurrence_id, grade_a_plus, grade_a, grade_a_minus,
+          grade_b_plus, grade_b, grade_b_minus,
+          grade_c_plus, grade_c, grade_c_minus,
+          grade_d, grade_e, grade_rp, grade_other, grade_ic,
+          uploaded_from_csv)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
         [
           occurrenceId,
           a_plus || 0,
@@ -283,19 +291,20 @@ router.put("/update/:occurrenceId", async (req, res) => {
           e || 0,
           rp || 0,
           other || 0,
+          ic || 0,
           false, // Not uploaded from CSV
         ],
       );
     } else {
       // Update existing grade distribution
       await db.query(
-        `UPDATE grade_distributions 
+        `UPDATE grade_distributions
          SET grade_a_plus = $1, grade_a = $2, grade_a_minus = $3,
              grade_b_plus = $4, grade_b = $5, grade_b_minus = $6,
              grade_c_plus = $7, grade_c = $8, grade_c_minus = $9,
              grade_d = $10, grade_e = $11, grade_rp = $12, grade_other = $13,
-             uploaded_from_csv = false
-         WHERE occurrence_id = $14`,
+             grade_ic = $14, uploaded_from_csv = false
+         WHERE occurrence_id = $15`,
         [
           a_plus || 0,
           a || 0,
@@ -310,6 +319,7 @@ router.put("/update/:occurrenceId", async (req, res) => {
           e || 0,
           rp || 0,
           other || 0,
+          ic || 0,
           occurrenceId,
         ],
       );
@@ -328,7 +338,8 @@ router.put("/update/:occurrenceId", async (req, res) => {
       (d || 0) +
       (e || 0) +
       (rp || 0) +
-      (other || 0);
+      (other || 0) +
+      (ic || 0);
 
     res.json({
       success: true,

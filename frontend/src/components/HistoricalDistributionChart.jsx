@@ -44,6 +44,7 @@ export default function HistoricalDistributionChart({
 
         // Grade labels in order
         const gradeLabels = [
+          "IC",
           "E",
           "D",
           "RP",
