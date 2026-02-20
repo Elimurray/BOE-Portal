@@ -79,7 +79,8 @@ body:has(.present-page.fullscreen) .navbar {
   gap: 1rem;
 }
 
-.header-controls {
+.header-controls,
+.header-right {
   display: flex;
   gap: 0.5rem;
   align-items: center;
@@ -108,7 +109,6 @@ body:has(.present-page.fullscreen) .navbar {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  margin-bottom: 20px;
   transition: all 0.2s;
 }
 
@@ -118,11 +118,11 @@ body:has(.present-page.fullscreen) .navbar {
 }
 
 .progress {
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   font-weight: 600;
   background: #fff;
   color: black;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 8px;
 }
 
@@ -290,7 +290,6 @@ body:has(.present-page.fullscreen) .navbar {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  margin-bottom: 20px;
   transition: all 0.2s;
 }
 
@@ -373,7 +372,6 @@ body:has(.present-page.fullscreen) .navbar {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  margin-bottom: 20px;
   transition: all 0.2s;
 }
 

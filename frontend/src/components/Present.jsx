@@ -457,7 +457,7 @@ export default function Present() {
           ← Back to Staging
         </button>
 
-        <div className="header-controls">
+        <div className="header-right">
           <button
             className="compare-btn"
             onClick={() =>
@@ -476,10 +476,9 @@ export default function Present() {
           >
             {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           </button>
-        </div>
-
-        <div className="progress">
-          {safeIndex + 1} / {presenting.length}
+          <div className="progress">
+            {safeIndex + 1} / {presenting.length}
+          </div>
         </div>
       </div>
 
