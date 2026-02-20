@@ -93,7 +93,6 @@ body:has(.present-page.fullscreen) .navbar {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  margin-bottom: 20px;
   transition: all 0.2s;
 }
 
