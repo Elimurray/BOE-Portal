@@ -155,7 +155,7 @@ export default function CourseFormFill() {
     } catch (error) {
       alert(
         "Error submitting form: " +
-          (error.response?.data?.error || error.message)
+          (error.response?.data?.error || error.message),
       );
     }
   };
@@ -170,13 +170,12 @@ export default function CourseFormFill() {
 
   return (
     <div className="course-form-fill-page">
-      <button className="back-button" onClick={() => navigate("/form")}>
-        ← Back to Search
-      </button>
-
       <div className="split-layout">
         {/* LEFT: Form */}
         <div className="form-panel">
+          <button className="back-button" onClick={() => navigate("/form")}>
+            ← Back to Search
+          </button>
           <div className="paper-header">
             <h3>
               {selectedPaper.paper_code} - {selectedPaper.year}{" "}
@@ -396,6 +395,7 @@ export default function CourseFormFill() {
                   <option value="OnCampus">On Campus</option>
                   <option value="Online">Online</option>
                   <option value="Blended">Blended</option>
+                  <option value="Dual">Dual</option>
                 </select>
               </div>
             </section>

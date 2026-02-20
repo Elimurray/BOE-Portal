@@ -94,7 +94,7 @@ export default function HistoricalDistributionChart({
     return <div className="chart-empty">No distribution data available</div>;
   }
 
-  // Color palette for historical years (lines)
+  // Vibrant colours for historical years, kept distinct but faded via opacity
   const lineColors = [
     "#970fd6", // Purple
     "#21c244", // Green
@@ -137,18 +137,15 @@ export default function HistoricalDistributionChart({
           <Tooltip />
           <Legend />
 
-          {/* Historical years as lines */}
+          {/* Historical years as muted background bars */}
           {historicalYears.map((year, index) => (
             <Bar
               key={year}
-              // type="monotone"
               dataKey={year}
               fill={lineColors[index % lineColors.length]}
+              fillOpacity={0.45}
               barSize={20}
-              // stroke={lineColors[index % lineColors.length]}
-              // strokeWidth={2}
               name={year}
-              // dot={{ r: 4 }}
               zIndex={1}
             />
           ))}

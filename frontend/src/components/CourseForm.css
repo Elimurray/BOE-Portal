@@ -187,7 +187,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 240px);
 }
 
 .paper-header {
@@ -307,7 +307,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 240px);
   color: black;
 }
 
@@ -342,13 +342,13 @@
 }
 
 .back-button {
-  background: #f3f4f6;
+  background: white;
   border: 1px solid #d1d5db;
-  padding: 10px 20px;
+  padding: 6px 14px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   transition: all 0.2s;
 }
 
