@@ -4,9 +4,17 @@ A web application for managing the Board of Examiners (BOE) process at the Unive
 
 ## Tech Stack
 
-**Frontend:** React, Vite, Recharts
-**Backend:** Node.js, Express, PostgreSQL, Multer, PapaParse, Cheerio
-**Deployment:** Docker / Docker Compose
+| Layer        | Technology             |
+| ------------ | ---------------------- |
+| Frontend     | React, Vite            |
+| Charts       | Recharts               |
+| HTTP Client  | Axios                  |
+| Backend      | Node.js, Express       |
+| Database     | PostgreSQL             |
+| File Uploads | Multer                 |
+| CSV Parsing  | PapaParse              |
+| Web Scraping | Cheerio                |
+| Deployment   | Docker, Docker Compose |
 
 ## Project Structure
 
@@ -103,17 +111,189 @@ npm run dev   # http://localhost:5173
 docker-compose up
 ```
 
-## API Endpoints
+## API Reference
 
-| Route             | Description              |
-| ----------------- | ------------------------ |
-| `GET /api/health` | Health check             |
-| `/api/grades`     | Grade data operations    |
-| `/api/papers`     | Paper/course information |
-| `/api/forms`      | Course review forms      |
-| `/api/graphs`     | Analytics and chart data |
-| `/api/scraper`    | Course outline scraping  |
-| `/api/review`     | Review data retrieval    |
+### Grades — `/api/grades`
+
+| Method | Path                    | Description                                                                       |
+| ------ | ----------------------- | --------------------------------------------------------------------------------- |
+| `POST` | `/upload`               | Upload CSV file; parses grade rows and upserts grade distributions per occurrence |
+| `PUT`  | `/update/:occurrenceId` | Manually update letter grade counts for an occurrence                             |
+
+### Papers — `/api/papers`
+
+| Method | Path                       | Description                                                   |
+| ------ | -------------------------- | ------------------------------------------------------------- |
+| `GET`  | `/`                        | All papers with occurrence counts and latest year/trimester   |
+| `GET`  | `/occurrences`             | All occurrences with grade distribution and form status       |
+| `GET`  | `/occurrences/incomplete`  | Occurrences where the course form has not been submitted      |
+| `GET`  | `/occurrences/:id`         | Single occurrence with paper details, grade data, and outline |
+| `POST` | `/occurrences/:id/outline` | Save scraped course outline data to an occurrence             |
+
+### Forms — `/api/forms`
+
+| Method | Path | Description                                                                         |
+| ------ | ---- | ----------------------------------------------------------------------------------- |
+| `POST` | `/`  | Submit a course review form; creates staff entries and links them to the occurrence |
+| `GET`  | `/`  | All submitted forms joined with paper information                                   |
+
+### Graphs — `/api/graphs`
+
+| Method | Path                                     | Description                                                                               |
+| ------ | ---------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `GET`  | `/:occurrenceId/distribution`            | Grade distribution for a single occurrence, formatted for charts                          |
+| `GET`  | `/historical/:paperCode`                 | Year-over-year pass rates and student counts for a paper code                             |
+| `GET`  | `/historical-distribution/:occurrenceId` | Full grade breakdowns for all previous occurrences of the same paper at the same location |
+
+### Scraper — `/api/scraper`
+
+| Method | Path       | Description                                                     |
+| ------ | ---------- | --------------------------------------------------------------- |
+| `POST` | `/outline` | Fetch and parse a course outline from the UoW curriculum system |
+
+**Request body:**
+
+```json
+{
+  "paperCode": "COMP103",
+  "year": 2025,
+  "trimester": "A",
+  "location": "Hamilton"
+}
+```
+
+The scraper builds an occurrence code in the format `COMP103-25A (Hamilton)`, URL-encodes it, and fetches HTML from the University of Waikato curriculum management system. Cheerio parses the returned HTML and extracts the following fields:
+
+| Field | Source |
+|---|---|
+| `paperTitle` | `Paper Title` label |
+| `paperOccurenceCode` | `Paper Occurrence Code` label |
+| `points` | `Points` label |
+| `deliveryMode` | `Delivery Mode` label |
+| `whenTaught` / `whereTaught` | `When Taught` / `Where Taught` labels |
+| `startWeek` / `endWeek` | `Start Week` / `End Week` labels |
+| `selfPaced` | `Self-Paced` label |
+| `assessmentRatio` | `Internal Assessment` label |
+| `convenors` | Staff table rows matching `Convenor` |
+| `lecturers` | Staff table rows matching `Lecturer` |
+| `administrators` | Staff table rows matching `Administrators` |
+| `tutors` | Staff table rows matching `Tutor` |
+
+Staff entries are returned as `{ name, email }` objects, with the name and email parsed by splitting on ` - ` in the staff table cell text.
+
+If the outline has not been published the endpoint returns `success: false` with a `404` status rather than throwing an error. The parsed data is returned to the frontend and can then be saved to `paper_outlines` via `POST /api/papers/occurrences/:id/outline`.
+
+### Review — `/api/review`
+
+| Method | Path               | Description                                                        |
+| ------ | ------------------ | ------------------------------------------------------------------ |
+| `GET`  | `/occurrences/:id` | Full occurrence details via the `occurrence_summary` database view |
+
+### Health
+
+| Method | Path          | Description  |
+| ------ | ------------- | ------------ |
+| `GET`  | `/api/health` | Health check |
+
+## Database Schema
+
+Seven tables with cascading foreign keys. All FK relationships use `ON DELETE CASCADE`.
+
+### `papers`
+
+Core course catalogue. Each paper has a unique `paper_code`.
+
+| Column                      | Type         | Notes  |
+| --------------------------- | ------------ | ------ |
+| `paper_id`                  | serial PK    |        |
+| `paper_code`                | varchar(20)  | unique |
+| `paper_name`                | varchar(255) |        |
+| `created_at` / `updated_at` | timestamp    |        |
+
+### `occurrences`
+
+A paper offered in a specific year, trimester, and location. Unique on `(paper_id, year, trimester, location)`.
+
+| Column          | Type            | Notes |
+| --------------- | --------------- | ----- |
+| `occurrence_id` | serial PK       |       |
+| `paper_id`      | int FK → papers |       |
+| `year`          | int             |       |
+| `trimester`     | varchar(20)     |       |
+| `location`      | varchar(100)    |       |
+
+### `grade_distributions`
+
+One row per occurrence. Totals, pass count, and pass rate are computed columns.
+
+| Column                                            | Type                 | Notes                  |
+| ------------------------------------------------- | -------------------- | ---------------------- |
+| `distribution_id`                                 | serial PK            |                        |
+| `occurrence_id`                                   | int FK → occurrences | unique                 |
+| `grade_a_plus` … `grade_e`                        | int                  | default 0              |
+| `grade_rp`, `grade_other`, `grade_wd`, `grade_ic` | int                  |                        |
+| `total_students`                                  | int                  | generated              |
+| `pass_count`                                      | int                  | generated (A+–C- + RP) |
+| `pass_rate`                                       | numeric(5,2)         | generated              |
+| `uploaded_from_csv`                               | bool                 |                        |
+| `upload_filename`                                 | varchar(255)         |                        |
+
+### `staff`
+
+Staff member registry, deduplicated by email.
+
+| Column     | Type         | Notes  |
+| ---------- | ------------ | ------ |
+| `staff_id` | serial PK    |        |
+| `name`     | varchar(100) |        |
+| `email`    | varchar(255) | unique |
+
+### `occurrence_staff`
+
+Many-to-many join between occurrences and staff. Composite PK on `(occurrence_id, staff_id, role)`.
+
+| Column          | Type                 | Notes                                           |
+| --------------- | -------------------- | ----------------------------------------------- |
+| `occurrence_id` | int FK → occurrences |                                                 |
+| `staff_id`      | int FK → staff       |                                                 |
+| `role`          | varchar(20)          | Lecturer, Convenor, Tutor, Administrator, Other |
+
+### `course_forms`
+
+Course review form submitted by staff. One form per occurrence.
+
+| Column                                     | Type                 | Notes                                |
+| ------------------------------------------ | -------------------- | ------------------------------------ |
+| `form_id`                                  | serial PK            |                                      |
+| `occurrence_id`                            | int FK → occurrences |                                      |
+| `status`                                   | varchar(20)          | draft, submitted, reviewed, approved |
+| `submitted_by_name` / `submitted_by_email` | varchar              |                                      |
+| `lecturers`, `tutors`                      | text                 |                                      |
+| `rp_count`                                 | int                  | default 0                            |
+| `assessment_item_count`                    | int                  |                                      |
+| `internal_external_split`                  | varchar(200)         |                                      |
+| `assessment_types_summary`                 | text                 |                                      |
+| `delivery_mode`                            | varchar(200)         |                                      |
+| `major_changes_description`                | text                 |                                      |
+| `grade_distribution_different`             | bool                 |                                      |
+| `grade_distribution_comments`              | text                 |                                      |
+| `other_comments`                           | text                 |                                      |
+
+### `paper_outlines`
+
+Scraped course outline data stored as JSONB. One row per occurrence.
+
+| Column           | Type                 | Notes        |
+| ---------------- | -------------------- | ------------ |
+| `outline_id`     | serial PK            |              |
+| `occurrence_id`  | int FK → occurrences | unique       |
+| `scraped_data`   | jsonb                |              |
+| `source_url`     | varchar(500)         |              |
+| `scrape_success` | bool                 | default true |
+
+### `occurrence_summary` (view)
+
+Joins all tables above into a single flat view used by the review and presentation routes.
 
 ## Presentation Keyboard Shortcuts
 
