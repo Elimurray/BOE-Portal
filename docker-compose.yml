@@ -7,10 +7,23 @@ services:
     ports:
       - "3001:3001"
     environment:
-      DATABASE_URL: postgresql://eli:password@192.168.1.11:5432/boe_portal
+      DATABASE_URL: postgresql://<username>:<password>@<host>:5432/boe_portal
       NODE_ENV: development
     volumes:
       - ./backend:/app
       - /app/node_modules
     command: npm run dev
-    
+
+  boe-portal-frontend:
+    build: ./frontend
+    container_name: boe-portal-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://boe-portal-backend:3001/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - boe-portal-backend
+    command: npm run dev -- --host
